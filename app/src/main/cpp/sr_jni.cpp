@@ -135,14 +135,11 @@ Java_com_skl_superres_SREngine_nativeProcess(JNIEnv* env, jclass,
             ncnn::Mat in(pw, ph, 3, 4u, 1);
             if (in.empty()) { rc = -3; break; }
 
-            float* pr = in.channel(0);
-            float* pg = in.channel(1);
-            float* pb = in.channel(2);
             for (int y = 0; y < ph; y++) {
                 const jint* row = src + (size_t)(py0 + y) * w + px0;
-                float* rr = pr + (size_t)y * pw;
-                float* gg = pg + (size_t)y * pw;
-                float* bb = pb + (size_t)y * pw;
+                float* rr = in.channel(0).row(y);
+                float* gg = in.channel(1).row(y);
+                float* bb = in.channel(2).row(y);
                 for (int x = 0; x < pw; x++) {
                     jint c = row[x];                       // 0xAARRGGBB
                     rr[x] = ((c >> 16) & 0xFF) * (1.0f / 255.0f);
@@ -152,7 +149,6 @@ Java_com_skl_superres_SREngine_nativeProcess(JNIEnv* env, jclass,
             }
 
             ncnn::Extractor ex = g_net.create_extractor();
-            ex.set_num_threads(thread_count());
             ex.input("in0", in);
             ncnn::Mat out;
             if (ex.extract("out0", out) != 0) {
@@ -168,9 +164,9 @@ Java_com_skl_superres_SREngine_nativeProcess(JNIEnv* env, jclass,
                 const int cw = (x1 - x0) * 4, chh = (y1 - y0) * 4;
                 for (int y = 0; y < chh; y++) {
                     jint* dp = dst + (size_t)(y0 * 4 + y) * ow + (x0 * 4);
-                    const float* r0 = out.channel(0) + (size_t)(cy + y) * out.w + cx;
-                    const float* r1 = out.channel(1) + (size_t)(cy + y) * out.w + cx;
-                    const float* r2 = out.channel(2) + (size_t)(cy + y) * out.w + cx;
+                    const float* r0 = out.channel(0).row(cy + y) + cx;
+                    const float* r1 = out.channel(1).row(cy + y) + cx;
+                    const float* r2 = out.channel(2).row(cy + y) + cx;
                     for (int x = 0; x < cw; x++) {
                         dp[x] = (jint)0xFF000000 |
                                 (clamp255(r0[x]) << 16) |
@@ -185,23 +181,24 @@ Java_com_skl_superres_SREngine_nativeProcess(JNIEnv* env, jclass,
                     if (sy + 1 >= out.h) sy = out.h - 2;
                     if (sy < 0) sy = 0;
                     jint* dp = dst + (size_t)(y0 * 2 + y) * ow + (x0 * 2);
+                    const float* cr0 = out.channel(0).row(sy);
+                    const float* cr1 = out.channel(1).row(sy);
+                    const float* cr2 = out.channel(2).row(sy);
                     for (int x = 0; x < cw; x++) {
                         int sx = cx + x * 2;
                         if (sx + 1 >= out.w) sx = out.w - 2;
                         if (sx < 0) sx = 0;
-                        float vr = 0, vg = 0, vb = 0;
-                        const float* ch[3] = { out.channel(0), out.channel(1), out.channel(2) };
                         float acc[3];
+                        const float* rows[3] = { cr0, cr1, cr2 };
                         for (int c = 0; c < 3; c++) {
-                            const float* r0 = ch[c] + (size_t)sy * out.w + sx;
-                            const float* r1 = r0 + out.w;
-                            acc[c] = (r0[0] + r0[1] + r1[0] + r1[1]) * 0.25f;
+                            const float* a = rows[c] + sx;
+                            const float* b = a + out.w;
+                            acc[c] = (a[0] + a[1] + b[0] + b[1]) * 0.25f;
                         }
-                        vr = acc[0]; vg = acc[1]; vb = acc[2];
                         dp[x] = (jint)0xFF000000 |
-                                (clamp255(vr) << 16) |
-                                (clamp255(vg) << 8)  |
-                                 clamp255(vb);
+                                (clamp255(acc[0]) << 16) |
+                                (clamp255(acc[1]) << 8)  |
+                                 clamp255(acc[2]);
                     }
                 }
             }
