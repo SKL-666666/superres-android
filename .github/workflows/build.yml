@@ -1,4 +1,4 @@
-name: Build APK
+﻿name: Build APK
 
 on:
   push:
@@ -48,8 +48,8 @@ jobs:
       - name: Verify ncnn layout
         run: |
           ls -la app/src/main/cpp/ncnn-android
-          ls app/src/main/cpp/ncnn-android/lib/arm64-v8a/ | head -20
-          ls app/src/main/cpp/ncnn-android/include/ncnn | head -5
+          find app/src/main/cpp/ncnn-android/arm64-v8a -maxdepth 2 | head -30
+          find app/src/main/cpp/ncnn-android -maxdepth 3 -name '*.h' | head -10
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
