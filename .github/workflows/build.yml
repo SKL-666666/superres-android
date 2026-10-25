@@ -1,4 +1,4 @@
-﻿name: Build APK
+name: Build APK
 
 on:
   push:
@@ -18,38 +18,34 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      # ubuntu-latest runner 已预装 Android SDK，无需 setup-android
-      - name: Show Android env
-        run: |
-          echo "ANDROID_HOME=$ANDROID_HOME"
-          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
-          ls $ANDROID_HOME || true
-          ls $ANDROID_HOME/ndk || true
-
       - name: Cache ncnn
         id: cache-ncnn
         uses: actions/cache@v4
         with:
           path: app/src/main/cpp/ncnn-android
-          key: ncnn-android-20261020
+          key: ncnn-android-cpu-20261020
 
-      - name: Download ncnn (android prebuilt)
+      - name: Download ncnn (CPU only prebuilt)
         if: steps.cache-ncnn.outputs.cache-hit != 'true'
         run: |
           set -e
           cd app/src/main/cpp
           TAG=$(curl -fsSL https://api.github.com/repos/Tencent/ncnn/releases/latest | grep -m1 '"tag_name"' | cut -d'"' -f4)
           echo "ncnn tag = $TAG"
-          curl -fL -o ncnn.zip "https://github.com/Tencent/ncnn/releases/download/${TAG}/ncnn-${TAG}-android-vulkan.zip"
+          curl -fL -o ncnn.zip "https://github.com/Tencent/ncnn/releases/download/${TAG}/ncnn-${TAG}-android.zip"
           unzip -q ncnn.zip
-          mv "ncnn-${TAG}-android-vulkan" ncnn-android
-          ls ncnn-android/lib/arm64-v8a/ | head
+          mv "ncnn-${TAG}-android" ncnn-android
+          echo "--- layout ---"
+          ls ncnn-android
+          ls ncnn-android/arm64-v8a/lib
+          ls ncnn-android/arm64-v8a/include
 
       - name: Verify ncnn layout
         run: |
-          ls -la app/src/main/cpp/ncnn-android
-          find app/src/main/cpp/ncnn-android/arm64-v8a -maxdepth 2 | head -30
-          find app/src/main/cpp/ncnn-android -maxdepth 3 -name '*.h' | head -10
+          set -e
+          test -f app/src/main/cpp/ncnn-android/arm64-v8a/lib/libncnn.a
+          test -d app/src/main/cpp/ncnn-android/arm64-v8a/include/ncnn
+          echo "ncnn OK"
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
