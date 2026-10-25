@@ -1,0 +1,253 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#0B0B0F">
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="20dp"
+            android:paddingEnd="20dp"
+            android:paddingTop="28dp"
+            android:paddingBottom="24dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="画质增强"
+                android:textColor="#FFFFFF"
+                android:textSize="26sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.04" />
+
+            <TextView
+                android:id="@+id/tvSubtitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="本地超分 · 纯 CPU · 不上传"
+                android:textColor="#7A7A88"
+                android:textSize="13sp" />
+
+            <!-- 模型选择 -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="26dp"
+                android:text="选择模型"
+                android:textColor="#9A9AA8"
+                android:textSize="13sp" />
+
+            <HorizontalScrollView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:scrollbars="none">
+
+                <LinearLayout
+                    android:id="@+id/modelRow"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal" />
+            </HorizontalScrollView>
+
+            <TextView
+                android:id="@+id/tvModelDesc"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:textColor="#6E6E7C"
+                android:textSize="12sp" />
+
+            <!-- 倍率 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="放大倍率"
+                    android:textColor="#9A9AA8"
+                    android:textSize="13sp" />
+
+                <TextView
+                    android:id="@+id/tvScale"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="×2"
+                    android:textColor="#8B7CFF"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <RadioGroup
+                android:id="@+id/scaleGroup"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:orientation="horizontal">
+
+                <RadioButton
+                    android:id="@+id/rb2x"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:checked="true"
+                    android:text="×2 快"
+                    android:textColor="#DADAE6" />
+
+                <RadioButton
+                    android:id="@+id/rb4x"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="×4 大"
+                    android:textColor="#DADAE6" />
+            </RadioGroup>
+
+            <!-- 图片网格 -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:text="图片（最多 9 张）"
+                android:textColor="#9A9AA8"
+                android:textSize="13sp" />
+
+            <GridLayout
+                android:id="@+id/grid"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:columnCount="3" />
+
+            <TextView
+                android:id="@+id/tvStatus"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:gravity="center"
+                android:text="尚未选择图片"
+                android:textColor="#6E6E7C"
+                android:textSize="13sp" />
+
+            <Space
+                android:layout_width="match_parent"
+                android:layout_height="24dp" />
+
+            <Button
+                android:id="@+id/btnAdd"
+                android:layout_width="match_parent"
+                android:layout_height="54dp"
+                android:background="@drawable/bg_btn_ghost"
+                android:text="＋  选择图片"
+                android:textAllCaps="false"
+                android:textColor="#C9C9D8"
+                android:textSize="15sp" />
+
+            <Button
+                android:id="@+id/btnProcess"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/bg_btn_primary"
+                android:text="开始增强"
+                android:textAllCaps="false"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <Button
+                android:id="@+id/btnSave"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/bg_btn_ghost"
+                android:text="保存至相册"
+                android:textAllCaps="false"
+                android:textColor="#C9C9D8"
+                android:textSize="15sp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:background="@drawable/bg_tip"
+                android:padding="12dp"
+                android:text="提示：输入建议 512–2000 像素可获得最佳超分效果；超大图会自动按块处理。"
+                android:textColor="#7A7A88"
+                android:textSize="11sp" />
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- 处理遮罩 -->
+    <FrameLayout
+        android:id="@+id/mask"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#CC000000"
+        android:clickable="true"
+        android:focusable="true"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:layout_width="260dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:background="@drawable/bg_dialog"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="26dp">
+
+            <TextView
+                android:id="@+id/tvPercent"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0%"
+                android:textColor="#FFFFFF"
+                android:textSize="40sp"
+                android:textStyle="bold" />
+
+            <ProgressBar
+                android:id="@+id/progress"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent"
+                android:layout_height="6dp"
+                android:layout_marginTop="16dp"
+                android:max="100"
+                android:progressTint="#8B7CFF"
+                android:progressBackgroundTint="#2A2A38" />
+
+            <TextView
+                android:id="@+id/tvProgressInfo"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:text="处理中…"
+                android:textColor="#9A9AA8"
+                android:textSize="13sp" />
+
+            <Button
+                android:id="@+id/btnCancel"
+                android:layout_width="match_parent"
+                android:layout_height="44dp"
+                android:layout_marginTop="18dp"
+                android:background="@drawable/bg_btn_ghost"
+                android:text="取消"
+                android:textAllCaps="false"
+                android:textColor="#C9C9D8"
+                android:textSize="14sp" />
+        </LinearLayout>
+    </FrameLayout>
+</FrameLayout>

@@ -1,0 +1,70 @@
+name: Build APK
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Cache ncnn
+        id: cache-ncnn
+        uses: actions/cache@v4
+        with:
+          path: app/src/main/cpp/ncnn-android
+          key: ncnn-${{ runner.os }}-20240827
+
+      - name: Download ncnn (android prebuilt)
+        if: steps.cache-ncnn.outputs.cache-hit != 'true'
+        run: |
+          set -e
+          cd app/src/main/cpp
+          # 官方 release：支持 arm64-v8a 的静态库
+          curl -fL -o ncnn.zip https://github.com/Tencent/ncnn/releases/download/20240827/ncnn-20240827-android-vulkan.zip
+          unzip -q ncnn.zip
+          mv ncnn-20240827-android-vulkan ncnn-android
+          ls ncnn-android/lib/arm64-v8a/ | head
+
+      - name: Verify ncnn layout
+        run: |
+          ls -la app/src/main/cpp/ncnn-android
+          ls app/src/main/cpp/ncnn-android/lib/arm64-v8a/ | head -20
+          ls app/src/main/cpp/ncnn-android/include/ncnn | head -5
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew || true
+
+      - name: Build debug APK
+        run: |
+          gradle wrapper --gradle-version 8.7 || true
+          ./gradlew assembleDebug --no-daemon --stacktrace -x lint
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: SuperRes-debug-apk
+          path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+
+      - name: Create Release
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.${{ github.run_number }}
+          name: SuperRes v1.0.${{ github.run_number }}
+          files: app/build/outputs/apk/debug/*.apk
+          generate_release_notes: true
