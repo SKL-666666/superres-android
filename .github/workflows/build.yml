@@ -31,17 +31,18 @@ jobs:
         uses: actions/cache@v4
         with:
           path: app/src/main/cpp/ncnn-android
-          key: ncnn-${{ runner.os }}-20240827
+          key: ncnn-android-20261020
 
       - name: Download ncnn (android prebuilt)
         if: steps.cache-ncnn.outputs.cache-hit != 'true'
         run: |
           set -e
           cd app/src/main/cpp
-          # 官方 release：支持 arm64-v8a 的静态库
-          curl -fL -o ncnn.zip https://github.com/Tencent/ncnn/releases/download/20240827/ncnn-20240827-android-vulkan.zip
+          TAG=$(curl -fsSL https://api.github.com/repos/Tencent/ncnn/releases/latest | grep -m1 '"tag_name"' | cut -d'"' -f4)
+          echo "ncnn tag = $TAG"
+          curl -fL -o ncnn.zip "https://github.com/Tencent/ncnn/releases/download/${TAG}/ncnn-${TAG}-android-vulkan.zip"
           unzip -q ncnn.zip
-          mv ncnn-20240827-android-vulkan ncnn-android
+          mv "ncnn-${TAG}-android-vulkan" ncnn-android
           ls ncnn-android/lib/arm64-v8a/ | head
 
       - name: Verify ncnn layout
