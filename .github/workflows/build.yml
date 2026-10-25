@@ -18,8 +18,13 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+      # ubuntu-latest runner 已预装 Android SDK，无需 setup-android
+      - name: Show Android env
+        run: |
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
+          ls $ANDROID_HOME || true
+          ls $ANDROID_HOME/ndk || true
 
       - name: Cache ncnn
         id: cache-ncnn
@@ -45,13 +50,13 @@ jobs:
           ls app/src/main/cpp/ncnn-android/lib/arm64-v8a/ | head -20
           ls app/src/main/cpp/ncnn-android/include/ncnn | head -5
 
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew || true
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: '8.7'
 
       - name: Build debug APK
-        run: |
-          gradle wrapper --gradle-version 8.7 || true
-          ./gradlew assembleDebug --no-daemon --stacktrace -x lint
+        run: gradle assembleDebug --no-daemon --stacktrace -x lint
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
