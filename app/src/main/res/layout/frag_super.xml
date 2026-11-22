@@ -194,7 +194,7 @@
                     android:layout_height="50dp"
                     android:background="@drawable/bg_btn_ghost"
                     android:gravity="center"
-                    android:padding="0"
+                    android:padding="0dp"
                     android:stateListAnimator="@null"
                     android:text=""
                     android:textAllCaps="false" />
