@@ -92,13 +92,9 @@ public class MainActivity extends AppCompatActivity {
             labels[i].setTypeface(null, on
                     ? android.graphics.Typeface.BOLD
                     : android.graphics.Typeface.NORMAL);
-            // 选中态辉光
-            if (on) {
-                icons[i].setShadowLayer(6f, 0f, 0f, withAlpha(ac, 150));
-                icons[i].setLayerType(View.LAYER_TYPE_SOFTWARE, null);
-            } else {
-                icons[i].setShadowLayer(0f, 0f, 0f, Color.TRANSPARENT);
-            }
+            // 选中态辉光（用缩放代替阴影，ImageView 不支持 setShadowLayer）
+            icons[i].setScaleX(on ? 1.1f : 1f);
+            icons[i].setScaleY(on ? 1.1f : 1f);
         }
         tabbar.setBackgroundColor(0xE6080809);
     }

@@ -42,6 +42,7 @@ import com.skl.superres.SREngine;
 import com.skl.superres.Theme;
 import com.skl.superres.compare.CompareDialog;
 import com.skl.superres.util.History;
+import com.skl.superres.widget.ProgressRingView;
 
 import java.io.InputStream;
 import java.io.OutputStream;
