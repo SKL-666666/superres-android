@@ -48,6 +48,11 @@ android {
     packagingOptions {
         jniLibs { useLegacyPackaging = false }
     }
+
+    // 强制源码按 UTF-8 编译，避免中文注释/字符串乱码
+    tasks.withType(JavaCompile).configureEach {
+        options.encoding = 'UTF-8'
+    }
 }
 
 dependencies {
