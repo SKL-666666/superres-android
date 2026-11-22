@@ -27,7 +27,6 @@ public class SREngine {
     }
 
     public static final Model[] MODELS = {
-        new Model("span",         "SPAN",           "结构锐利 · 无幻觉", "2.2M · 835KB",  "文字 线条 建筑"),
         new Model("animevideov3", "AnimeVideo v3",  "自然柔和 · 最快",   "0.62M · 1.2MB", "日常随手拍"),
         new Model("x4v3",         "Real-ESRGAN v3", "通透锐利 · 细节多", "1.2M · 2.4MB",  "想要更锐"),
         new Model("wdn",          "WDN v3",         "低噪稳健",         "1.2M · 2.4MB",  "夜景 高噪"),

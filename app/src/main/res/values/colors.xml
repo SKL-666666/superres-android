@@ -1,20 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="ic_launcher_background">#7B6BFF</color>
+    <color name="ic_launcher_background">#6C5CE7</color>
 
-    <!-- 浅色主题（默认，随系统切换） -->
-    <color name="page">#F6F6FA</color>
+    <!-- 浅色主题（苹果风格：低饱和、高亮度） -->
+    <color name="page">#FAFAFC</color>
     <color name="card">#FFFFFF</color>
-    <color name="text_primary">#14141A</color>
-    <color name="text_secondary">#5A5A68</color>
-    <color name="text_muted">#77778A</color>
-    <color name="text_faint">#8A8A9A</color>
+    <color name="text_primary">#1C1C1E</color>
+    <color name="text_secondary">#6E6E73</color>
+    <color name="text_muted">#8E8E93</color>
+    <color name="text_faint">#AEAEB2</color>
+
     <color name="accent">#6C5CE7</color>
     <color name="accent_soft">#8B7CFF</color>
-    <color name="track">#E4E4EC</color>
-    <color name="btn_ghost_text">#3A3A48</color>
+    <color name="glow_secondary">#4FC3F7</color>
+
+    <color name="grad_top">#8B7CFF</color>
+    <color name="grad_bottom">#6C5CE7</color>
+
+    <!-- 玻璃拟态 -->
+    <color name="glass_fill">#B3FFFFFF</color>
+    <color name="glass_fill_sel">#F2EFEBFF</color>
+    <color name="glass_stroke">#1A000000</color>
+    <color name="glass_hi">#40FFFFFF</color>
+    <color name="ripple">#1A000000</color>
+
+    <color name="track">#E5E5EA</color>
+    <color name="btn_ghost_text">#3A3A3C</color>
     <color name="seg_text_on">#FFFFFF</color>
-    <color name="seg_text_off">#7A7A8A</color>
-    <color name="tab_bg">#FFFFFF</color>
-    <color name="tab_icon_off">#9A9AA8</color>
+    <color name="seg_text_off">#8E8E93</color>
+    <color name="tab_bg">#F2F2F7</color>
+    <color name="tab_icon_off">#AEAEB2</color>
 </resources>

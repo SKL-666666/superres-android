@@ -52,7 +52,7 @@ public class MainActivity extends AppCompatActivity {
     private boolean useInt8  = false;
 
     private GridLayout grid;
-    private LinearLayout modelRow, emptyBox, resultCard;
+    private LinearLayout modelRow, emptyBox, resultCard, cardModel, cardOptions;
     private TextView tvStatus, tvModelDesc, tvPercent, tvProgressInfo, tvResultInfo, tvDevice;
     private TextView seg2x, seg4x;
     private FrameLayout mask;
@@ -92,6 +92,22 @@ public class MainActivity extends AppCompatActivity {
         tvDevice.setText("设备自适应 · " + SREngine.threads() + " 线程 · tile " + SREngine.tile());
 
         updateStatus();
+        playEntrance();
+    }
+
+    /** 苹果风格的错峰入场：标题先来，卡片依次上浮 */
+    private void playEntrance() {
+        TextView tvTitle = findViewById(R.id.tvTitle);
+        TextView tvSub   = findViewById(R.id.tvSubtitle);
+
+        Anim.enterUp(tvTitle, 40);
+        Anim.enterUp(tvSub, 110);
+        Anim.enterUp(tvDevice, 160);
+        Anim.enterScale(cardModel, 220);
+        Anim.enterScale(cardOptions, 300);
+        Anim.enterUp(emptyBox, 360);
+        Anim.enterUp(btnAdd, 400);
+        Anim.enterUp(btnProcess, 440);
     }
 
     private void bindViews() {
@@ -99,6 +115,8 @@ public class MainActivity extends AppCompatActivity {
         modelRow       = findViewById(R.id.modelRow);
         emptyBox       = findViewById(R.id.emptyBox);
         resultCard     = findViewById(R.id.resultCard);
+        cardModel      = findViewById(R.id.cardModel);
+        cardOptions    = findViewById(R.id.cardOptions);
         tvStatus       = findViewById(R.id.tvStatus);
         tvModelDesc    = findViewById(R.id.tvModelDesc);
         tvPercent      = findViewById(R.id.tvPercent);
@@ -123,6 +141,8 @@ public class MainActivity extends AppCompatActivity {
         seg2x.setOnClickListener(v -> setScale(2));
         seg4x.setOnClickListener(v -> setScale(4));
         setScale(2);
+        Anim.pressFeedback(seg2x);
+        Anim.pressFeedback(seg4x);
     }
 
     private void setScale(int s) {
@@ -145,6 +165,13 @@ public class MainActivity extends AppCompatActivity {
         btnZip.setOnClickListener(v -> exportZip());
         btnCancel.setOnClickListener(v -> cancelFlag.set(true));
 
+        Anim.pressFeedback(btnAdd);
+        Anim.pressFeedback(btnProcess);
+        Anim.pressFeedback(btnSave);
+        Anim.pressFeedback(btnZip);
+        Anim.pressFeedback(btnCancel);
+        Anim.pressFeedback(emptyBox);
+
         cbLuma.setOnCheckedChangeListener((v, c) -> { lumaOnly = c; clearResults(); });
         cbInt8.setOnCheckedChangeListener((v, c) -> {
             useInt8 = c;
@@ -156,9 +183,27 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setupTabs() {
-        findViewById(R.id.tabSuper).setOnClickListener(v -> { });
-        findViewById(R.id.tabHistory).setOnClickListener(v -> showHistory());
-        findViewById(R.id.tabAbout).setOnClickListener(v -> showAbout());
+        View tabSuper   = findViewById(R.id.tabSuper);
+        View tabHistory = findViewById(R.id.tabHistory);
+        View tabAbout   = findViewById(R.id.tabAbout);
+
+        tabSuper.setOnClickListener(v -> { });
+        tabHistory.setOnClickListener(v -> {
+            bounce(v);
+            showHistory();
+        });
+        tabAbout.setOnClickListener(v -> {
+            bounce(v);
+            showAbout();
+        });
+    }
+
+    /** Tab 点击的弹簧回弹 */
+    private void bounce(View v) {
+        v.animate().scaleX(0.9f).scaleY(0.9f).setDuration(80)
+                .withEndAction(() -> v.animate().scaleX(1f).scaleY(1f)
+                        .setDuration(280).setInterpolator(Anim.IOS_SPRING).start())
+                .start();
     }
 
     private void showHistory() {
@@ -179,12 +224,10 @@ public class MainActivity extends AppCompatActivity {
 
     private void showAbout() {
         String msg = "SuperRes · 画质增强\n\n"
-                + "纯 CPU 离线超分，四模型可选。\n"
+                + "纯 CPU 离线超分，三模型可选。\n"
                 + "推理框架：ncnn\n"
                 + "线程 " + SREngine.threads() + " · tile " + SREngine.tile() + "\n\n"
-                + "模型来源：\n"
-                + "· SPAN (NomosUni)\n"
-                + "· Real-ESRGAN v3 系列 (xinntao)\n\n"
+                + "模型来源：Real-ESRGAN v3 系列 (xinntao)\n\n"
                 + "所有图像在本机处理，不上传任何数据。";
         new AlertDialog.Builder(this)
                 .setTitle("关于")
@@ -262,6 +305,18 @@ public class MainActivity extends AppCompatActivity {
                 updateStatus();
             });
             modelRow.addView(chip);
+
+            // 选中项轻微放大，未选中略缩
+            chip.setScaleX(i == selectedModel ? 1f : 0.96f);
+            chip.setScaleY(i == selectedModel ? 1f : 0.96f);
+            chip.setAlpha(i == selectedModel ? 1f : 0.72f);
+            chip.animate()
+                    .scaleX(i == selectedModel ? 1f : 0.96f)
+                    .scaleY(i == selectedModel ? 1f : 0.96f)
+                    .alpha(i == selectedModel ? 1f : 0.72f)
+                    .setDuration(280)
+                    .setInterpolator(Anim.IOS_SPRING)
+                    .start();
         }
         tvModelDesc.setText(SREngine.MODELS[selectedModel].desc
                 + " · 适合：" + SREngine.MODELS[selectedModel].tag);
@@ -274,20 +329,21 @@ public class MainActivity extends AppCompatActivity {
         grid.setVisibility(empty ? View.GONE : View.VISIBLE);
         if (empty) return;
 
-        int size = dp(96);
+        int size = dp(98);
         for (int i = 0; i < picked.size(); i++) {
             final int idx = i;
             FrameLayout cell = new FrameLayout(this);
             GridLayout.LayoutParams gp = new GridLayout.LayoutParams();
             gp.width = 0; gp.height = size;
             gp.columnSpec = GridLayout.spec(i % 3, 1f);
-            gp.setMargins(dp(3), dp(3), dp(3), dp(3));
+            gp.setMargins(dp(4), dp(4), dp(4), dp(4));
             cell.setLayoutParams(gp);
 
             ImageView iv = new ImageView(this);
             iv.setScaleType(ImageView.ScaleType.CENTER_CROP);
             iv.setBackgroundColor(getColor(R.color.card));
             iv.setImageURI(picked.get(i));
+            iv.setClipToOutline(false);
             cell.addView(iv, new FrameLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 
@@ -299,7 +355,7 @@ public class MainActivity extends AppCompatActivity {
             int ns = dp(18);
             FrameLayout.LayoutParams np = new FrameLayout.LayoutParams(ns, ns);
             np.gravity = Gravity.TOP | Gravity.START;
-            np.setMargins(dp(4), dp(4), 0, 0);
+            np.setMargins(dp(5), dp(5), 0, 0);
             num.setLayoutParams(np);
             num.setBackgroundResource(R.drawable.bg_chip_selected);
             cell.addView(num);
@@ -312,7 +368,7 @@ public class MainActivity extends AppCompatActivity {
             int s = dp(20);
             FrameLayout.LayoutParams xp = new FrameLayout.LayoutParams(s, s);
             xp.gravity = Gravity.TOP | Gravity.END;
-            xp.setMargins(0, dp(3), dp(3), 0);
+            xp.setMargins(0, dp(4), dp(4), 0);
             x.setLayoutParams(xp);
             x.setBackgroundResource(R.drawable.bg_dialog);
             x.setOnClickListener(v -> {
@@ -326,6 +382,17 @@ public class MainActivity extends AppCompatActivity {
             iv.setOnClickListener(v -> previewCompare(idx));
 
             grid.addView(cell);
+
+            // 逐个错峰淡入
+            cell.setAlpha(0f);
+            cell.setScaleX(0.9f);
+            cell.setScaleY(0.9f);
+            cell.animate()
+                    .alpha(1f).scaleX(1f).scaleY(1f)
+                    .setStartDelay(i * 45L)
+                    .setDuration(360)
+                    .setInterpolator(Anim.IOS_SPRING)
+                    .start();
         }
     }
 
@@ -362,12 +429,17 @@ public class MainActivity extends AppCompatActivity {
         } else {
             tvStatus.setText("已选择 " + picked.size() + " 张 · 待处理");
         }
-        btnProcess.setEnabled(!picked.isEmpty());
-        btnSave.setEnabled(!results.isEmpty());
-        btnZip.setEnabled(!results.isEmpty());
-        btnProcess.setAlpha(picked.isEmpty() ? 0.45f : 1f);
-        btnSave.setAlpha(results.isEmpty() ? 0.45f : 1f);
-        btnZip.setAlpha(results.isEmpty() ? 0.45f : 1f);
+        setEnabled(btnProcess, !picked.isEmpty());
+        setEnabled(btnSave, !results.isEmpty());
+        setEnabled(btnZip, !results.isEmpty());
+    }
+
+    /** 禁用态：淡出 + 不可点 + 轻微缩小 */
+    private void setEnabled(View v, boolean on) {
+        v.setEnabled(on);
+        v.animate().alpha(on ? 1f : 0.38f).scaleX(on ? 1f : 0.98f)
+                .scaleY(on ? 1f : 0.98f).setDuration(220)
+                .setInterpolator(Anim.IOS_EASE).start();
     }
 
     private void startProcess() {
@@ -379,16 +451,14 @@ public class MainActivity extends AppCompatActivity {
         clearResults();
         cancelFlag.set(false);
 
-        mask.setVisibility(View.VISIBLE);
-        progress.setProgress(0);
-        tvPercent.setText("0%");
+        showMask();
         tvProgressInfo.setText("加载模型…");
         ivPreview.setImageURI(picked.get(0));
 
         pool.execute(() -> {
             if (!engine.load(modelId, int8)) {
                 ui.post(() -> {
-                    mask.setVisibility(View.GONE);
+                    hideMask();
                     Toast.makeText(this, "模型加载失败：" + modelId, Toast.LENGTH_LONG).show();
                 });
                 return;
@@ -433,11 +503,33 @@ public class MainActivity extends AppCompatActivity {
             }
 
             ui.post(() -> {
-                mask.setVisibility(View.GONE);
+                hideMask();
                 updateStatus();
                 showResultSummary();
             });
         });
+    }
+
+    /** 遮罩入场：淡入 + 弹窗上浮 */
+    private void showMask() {
+        mask.setVisibility(View.VISIBLE);
+        mask.setAlpha(0f);
+        mask.animate().alpha(1f).setDuration(260).setInterpolator(Anim.IOS_EASE).start();
+
+        View card = findViewById(R.id.dialogCard);
+        card.setScaleX(0.88f);
+        card.setScaleY(0.88f);
+        card.setAlpha(0f);
+        card.animate().scaleX(1f).scaleY(1f).alpha(1f)
+                .setDuration(420).setInterpolator(Anim.IOS_SPRING).start();
+
+        Anim.pulse(tvProgressInfo);
+    }
+
+    private void hideMask() {
+        Anim.stopPulse(tvProgressInfo);
+        mask.animate().alpha(0f).setDuration(200)
+                .withEndAction(() -> mask.setVisibility(View.GONE)).start();
     }
 
     private void showResultSummary() {
@@ -446,6 +538,7 @@ public class MainActivity extends AppCompatActivity {
         for (String s : resultInfo) sb.append(s).append('\n');
         tvResultInfo.setText(sb.toString().trim());
         resultCard.setVisibility(View.VISIBLE);
+        Anim.enterUp(resultCard, 0);
     }
 
     private Bitmap decodeSampled(Uri uri) {

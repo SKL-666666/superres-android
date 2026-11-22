@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 玻璃拟态卡片：半透明 + 细描边（上亮下暗，模拟高光） -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape>
+            <solid android:color="@color/glass_fill" />
+            <corners android:radius="20dp" />
+        </shape>
+    </item>
+    <item>
+        <shape>
+            <stroke android:width="0.8dp" android:color="@color/glass_stroke" />
+            <corners android:radius="20dp" />
+            <gradient
+                android:angle="270"
+                android:startColor="@color/glass_hi"
+                android:endColor="#00000000"
+                android:type="linear" />
+        </shape>
+    </item>
+</layer-list>
