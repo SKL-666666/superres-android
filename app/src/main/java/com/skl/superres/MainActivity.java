@@ -40,18 +40,17 @@ public class MainActivity extends AppCompatActivity {
 
     private static final int MAX_PICK = 9;
 
-    private final List<Uri>     picked  = new ArrayList<>();
-    private final List<Bitmap>  results = new ArrayList<>();
+    private final List<Uri>     picked     = new ArrayList<>();
+    private final List<Bitmap>  results    = new ArrayList<>();
     private final List<String>  resultInfo = new ArrayList<>();
     private final AtomicBoolean cancelFlag = new AtomicBoolean(false);
 
     private SREngine engine;
     private int  selectedModel = 0;
-    private int  scale  = 2;
+    private int  scale   = 2;
     private boolean lumaOnly = true;
     private boolean useInt8  = false;
 
-    // 瑙嗗浘
     private GridLayout grid;
     private LinearLayout modelRow, emptyBox, resultCard;
     private TextView tvStatus, tvModelDesc, tvPercent, tvProgressInfo, tvResultInfo, tvDevice;
@@ -90,35 +89,34 @@ public class MainActivity extends AppCompatActivity {
         setupButtons();
         handleIncomingIntent();
 
-        // F8锛氭樉绀鸿嚜閫傚簲鍙傛暟
-        tvDevice.setText("璁惧鑷€傚簲 路 " + SREngine.threads() + " 绾跨▼ 路 tile " + SREngine.tile());
+        tvDevice.setText("设备自适应 · " + SREngine.threads() + " 线程 · tile " + SREngine.tile());
 
         updateStatus();
     }
 
     private void bindViews() {
-        grid          = findViewById(R.id.grid);
-        modelRow      = findViewById(R.id.modelRow);
-        emptyBox      = findViewById(R.id.emptyBox);
-        resultCard    = findViewById(R.id.resultCard);
-        tvStatus      = findViewById(R.id.tvStatus);
-        tvModelDesc   = findViewById(R.id.tvModelDesc);
-        tvPercent     = findViewById(R.id.tvPercent);
-        tvProgressInfo= findViewById(R.id.tvProgressInfo);
-        tvResultInfo  = findViewById(R.id.tvResultInfo);
-        tvDevice      = findViewById(R.id.tvDevice);
-        seg2x         = findViewById(R.id.seg2x);
-        seg4x         = findViewById(R.id.seg4x);
-        mask          = findViewById(R.id.mask);
-        progress      = findViewById(R.id.progress);
-        ivPreview     = findViewById(R.id.ivPreview);
-        cbLuma        = findViewById(R.id.cbLuma);
-        cbInt8        = findViewById(R.id.cbInt8);
-        btnAdd        = findViewById(R.id.btnAdd);
-        btnProcess    = findViewById(R.id.btnProcess);
-        btnSave       = findViewById(R.id.btnSave);
-        btnZip        = findViewById(R.id.btnZip);
-        btnCancel     = findViewById(R.id.btnCancel);
+        grid           = findViewById(R.id.grid);
+        modelRow       = findViewById(R.id.modelRow);
+        emptyBox       = findViewById(R.id.emptyBox);
+        resultCard     = findViewById(R.id.resultCard);
+        tvStatus       = findViewById(R.id.tvStatus);
+        tvModelDesc    = findViewById(R.id.tvModelDesc);
+        tvPercent      = findViewById(R.id.tvPercent);
+        tvProgressInfo = findViewById(R.id.tvProgressInfo);
+        tvResultInfo   = findViewById(R.id.tvResultInfo);
+        tvDevice       = findViewById(R.id.tvDevice);
+        seg2x          = findViewById(R.id.seg2x);
+        seg4x          = findViewById(R.id.seg4x);
+        mask           = findViewById(R.id.mask);
+        progress       = findViewById(R.id.progress);
+        ivPreview      = findViewById(R.id.ivPreview);
+        cbLuma         = findViewById(R.id.cbLuma);
+        cbInt8         = findViewById(R.id.cbInt8);
+        btnAdd         = findViewById(R.id.btnAdd);
+        btnProcess     = findViewById(R.id.btnProcess);
+        btnSave        = findViewById(R.id.btnSave);
+        btnZip         = findViewById(R.id.btnZip);
+        btnCancel      = findViewById(R.id.btnCancel);
     }
 
     private void setupSegmented() {
@@ -151,13 +149,12 @@ public class MainActivity extends AppCompatActivity {
         cbInt8.setOnCheckedChangeListener((v, c) -> {
             useInt8 = c;
             if (c) {
-                Toast.makeText(this, "鍔犻€熸。闇€瑕?int8 妯″瀷锛岀己澶辨椂鑷姩鍥為€€", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "加速档需要 int8 模型，缺失时自动回退", Toast.LENGTH_SHORT).show();
             }
             clearResults();
         });
     }
 
-    /** U7锛氬簳閮?Tab */
     private void setupTabs() {
         findViewById(R.id.tabSuper).setOnClickListener(v -> { });
         findViewById(R.id.tabHistory).setOnClickListener(v -> showHistory());
@@ -166,7 +163,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void showHistory() {
         if (resultInfo.isEmpty()) {
-            Toast.makeText(this, "鏈浼氳瘽杩樻病鏈夊鐞嗚褰?, Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "本次会话还没有处理记录", Toast.LENGTH_SHORT).show();
             return;
         }
         StringBuilder sb = new StringBuilder();
@@ -174,29 +171,28 @@ public class MainActivity extends AppCompatActivity {
             sb.append(i + 1).append(". ").append(resultInfo.get(i)).append('\n');
         }
         new AlertDialog.Builder(this)
-                .setTitle("鏈澶勭悊璁板綍")
+                .setTitle("本次处理记录")
                 .setMessage(sb.toString())
-                .setPositiveButton("鍏抽棴", null)
+                .setPositiveButton("关闭", null)
                 .show();
     }
 
     private void showAbout() {
-        String msg = "SuperRes 路 鐢昏川澧炲己\n\n"
-                + "绾?CPU 绂荤嚎瓒呭垎锛屽洓妯″瀷鍙€夈€俓n"
-                + "鎺ㄧ悊妗嗘灦锛歯cnn\n"
-                + "绾跨▼ " + SREngine.threads() + " 路 tile " + SREngine.tile() + "\n\n"
-                + "妯″瀷鏉ユ簮锛歕n"
-                + "路 SPAN (NomosUni)\n"
-                + "路 Real-ESRGAN v3 绯诲垪 (xinntao)\n\n"
-                + "鎵€鏈夊浘鍍忓湪鏈満澶勭悊锛屼笉涓婁紶浠讳綍鏁版嵁銆?;
+        String msg = "SuperRes · 画质增强\n\n"
+                + "纯 CPU 离线超分，四模型可选。\n"
+                + "推理框架：ncnn\n"
+                + "线程 " + SREngine.threads() + " · tile " + SREngine.tile() + "\n\n"
+                + "模型来源：\n"
+                + "· SPAN (NomosUni)\n"
+                + "· Real-ESRGAN v3 系列 (xinntao)\n\n"
+                + "所有图像在本机处理，不上传任何数据。";
         new AlertDialog.Builder(this)
-                .setTitle("鍏充簬")
+                .setTitle("关于")
                 .setMessage(msg)
-                .setPositiveButton("濂?, null)
+                .setPositiveButton("好", null)
                 .show();
     }
 
-    /** 鎺ユ敹鍏跺畠 App 鍒嗕韩杩涙潵鐨勫浘鐗?*/
     private void handleIncomingIntent() {
         Intent it = getIntent();
         if (it == null) return;
@@ -219,7 +215,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    /** U1锛氭ā鍨?chip 甯﹀弬鏁?浣撶Н瑙掓爣 */
     private void buildModelChips() {
         modelRow.removeAllViews();
         for (int i = 0; i < SREngine.MODELS.length; i++) {
@@ -268,10 +263,10 @@ public class MainActivity extends AppCompatActivity {
             });
             modelRow.addView(chip);
         }
-        tvModelDesc.setText(SREngine.MODELS[selectedModel].desc + " 路 閫傚悎锛? + SREngine.MODELS[selectedModel].tag);
+        tvModelDesc.setText(SREngine.MODELS[selectedModel].desc
+                + " · 适合：" + SREngine.MODELS[selectedModel].tag);
     }
 
-    /** U6锛氱綉鏍煎甫搴忓彿瑙掓爣锛沀3锛氱┖鐘舵€佸垏鎹?*/
     private void refreshGrid() {
         grid.removeAllViews();
         boolean empty = picked.isEmpty();
@@ -296,7 +291,6 @@ public class MainActivity extends AppCompatActivity {
             cell.addView(iv, new FrameLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 
-            // 搴忓彿瑙掓爣
             TextView num = new TextView(this);
             num.setText(String.valueOf(i + 1));
             num.setTextColor(Color.WHITE);
@@ -310,9 +304,8 @@ public class MainActivity extends AppCompatActivity {
             num.setBackgroundResource(R.drawable.bg_chip_selected);
             cell.addView(num);
 
-            // 鍒犻櫎
             TextView x = new TextView(this);
-            x.setText("脳");
+            x.setText("x");
             x.setTextColor(Color.WHITE);
             x.setTextSize(13);
             x.setGravity(Gravity.CENTER);
@@ -330,16 +323,15 @@ public class MainActivity extends AppCompatActivity {
             });
             cell.addView(x);
 
-            // 鐐瑰嚮棰勮瀵规瘮锛團1锛?            iv.setOnClickListener(v -> previewCompare(idx));
+            iv.setOnClickListener(v -> previewCompare(idx));
 
             grid.addView(cell);
         }
     }
 
-    /** F1/F9锛氭墦寮€鍓嶅悗瀵规瘮 */
     private void previewCompare(int index) {
         if (index >= results.size()) {
-            Toast.makeText(this, "璇ュ浘灏氭湭澧炲己锛屽厛鐐瑰紑濮嬪寮?, Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "该图尚未增强，先点开始增强", Toast.LENGTH_SHORT).show();
             return;
         }
         Bitmap out = results.get(index);
@@ -348,13 +340,11 @@ public class MainActivity extends AppCompatActivity {
 
         CompareView cv = new CompareView(this);
         cv.setBitmaps(src, out);
-        cv.setOnHoldListener(holding ->
-                Toast.makeText(this, holding ? "鏉炬墜鐪嬪寮虹粨鏋? : "", Toast.LENGTH_SHORT).show());
 
         new AlertDialog.Builder(this)
-                .setTitle("鎷栧姩绔栫嚎瀵规瘮 路 闀挎寜鐪嬪師鍥?)
+                .setTitle("拖动竖线对比 · 长按看原图")
                 .setView(cv, dp(16), dp(16), dp(16), dp(16))
-                .setPositiveButton("鍏抽棴", null)
+                .setPositiveButton("关闭", null)
                 .show();
     }
 
@@ -368,9 +358,9 @@ public class MainActivity extends AppCompatActivity {
         if (picked.isEmpty()) {
             tvStatus.setText("");
         } else if (!results.isEmpty() && results.size() == picked.size()) {
-            tvStatus.setText("宸插寮?" + results.size() + " 寮?路 鐐圭缉鐣ュ浘鍙姣?);
+            tvStatus.setText("已增强 " + results.size() + " 张 · 点缩略图可对比");
         } else {
-            tvStatus.setText("宸查€夋嫨 " + picked.size() + " 寮?路 寰呭鐞?);
+            tvStatus.setText("已选择 " + picked.size() + " 张 · 待处理");
         }
         btnProcess.setEnabled(!picked.isEmpty());
         btnSave.setEnabled(!results.isEmpty());
@@ -392,14 +382,14 @@ public class MainActivity extends AppCompatActivity {
         mask.setVisibility(View.VISIBLE);
         progress.setProgress(0);
         tvPercent.setText("0%");
-        tvProgressInfo.setText("鍔犺浇妯″瀷鈥?);
+        tvProgressInfo.setText("加载模型…");
         ivPreview.setImageURI(picked.get(0));
 
         pool.execute(() -> {
             if (!engine.load(modelId, int8)) {
                 ui.post(() -> {
                     mask.setVisibility(View.GONE);
-                    Toast.makeText(this, "妯″瀷鍔犺浇澶辫触锛? + modelId, Toast.LENGTH_LONG).show();
+                    Toast.makeText(this, "模型加载失败：" + modelId, Toast.LENGTH_LONG).show();
                 });
                 return;
             }
@@ -409,7 +399,7 @@ public class MainActivity extends AppCompatActivity {
                 if (cancelFlag.get()) break;
                 final int idx = i;
                 ui.post(() -> {
-                    tvProgressInfo.setText("澶勭悊绗?" + (idx + 1) + " / " + total + " 寮?);
+                    tvProgressInfo.setText("处理第 " + (idx + 1) + " / " + total + " 张");
                     progress.setProgress(0);
                     tvPercent.setText("0%");
                     ivPreview.setImageURI(picked.get(idx));
@@ -426,19 +416,19 @@ public class MainActivity extends AppCompatActivity {
 
                 Bitmap out = engine.process(src, sc, luma, cb);
                 if (out == null) {
-                    ui.post(() -> Toast.makeText(this, "澶勭悊澶辫触锛屽彲鑳藉唴瀛樹笉瓒?, Toast.LENGTH_LONG).show());
+                    ui.post(() -> Toast.makeText(this, "处理失败，可能内存不足", Toast.LENGTH_LONG).show());
                     break;
                 }
                 final long ms = engine.lastCostMs;
-                final String info = (idx + 1) + ". " + sw + "脳" + sh
-                        + " 鈫?" + (sw * sc) + "脳" + (sh * sc)
-                        + " 路 " + String.format("%.1fs", ms / 1000.0)
-                        + " 路 " + SREngine.MODELS[selectedModel].name;
+                final String info = (idx + 1) + ". " + sw + "x" + sh
+                        + " -> " + (sw * sc) + "x" + (sh * sc)
+                        + " · " + String.format("%.1fs", ms / 1000.0)
+                        + " · " + SREngine.MODELS[selectedModel].name;
                 synchronized (results) {
                     results.add(out);
                     resultInfo.add(info);
                 }
-                ui.post(() -> tvProgressInfo.setText("绗?" + (idx + 1) + " 寮犲畬鎴?路 "
+                ui.post(() -> tvProgressInfo.setText("第 " + (idx + 1) + " 张完成 · "
                         + String.format("%.1fs", ms / 1000.0)));
             }
 
@@ -450,18 +440,14 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    /** U4锛氱粨鏋滃崱鐗囨樉绀哄昂瀵稿彉鍖栦笌鑰楁椂 */
     private void showResultSummary() {
         if (resultInfo.isEmpty()) return;
         StringBuilder sb = new StringBuilder();
-        for (String s : resultInfo) {
-            sb.append(s).append('\n');
-        }
+        for (String s : resultInfo) sb.append(s).append('\n');
         tvResultInfo.setText(sb.toString().trim());
         resultCard.setVisibility(View.VISIBLE);
     }
 
-    /** 闄愬埗鏈€闀胯竟 2000px */
     private Bitmap decodeSampled(Uri uri) {
         try {
             BitmapFactory.Options o = new BitmapFactory.Options();
@@ -491,10 +477,9 @@ public class MainActivity extends AppCompatActivity {
         for (Bitmap bm : results) {
             if (saveOne(bm, prefix)) ok++;
         }
-        Toast.makeText(this, "宸蹭繚瀛?" + ok + " 寮犲埌鐩稿唽 Pictures/SuperRes", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "已保存 " + ok + " 张到相册 Pictures/SuperRes", Toast.LENGTH_SHORT).show();
     }
 
-    /** F6锛氭枃浠跺悕甯﹀師鍥惧悗缂€鎻愮ず */
     private boolean saveOne(Bitmap bm, String prefix) {
         String name = prefix + System.currentTimeMillis() + ".jpg";
         try {
@@ -522,7 +507,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    /** F10锛氬鍑?ZIP 鍒?Downloads */
     private void exportZip() {
         if (results.isEmpty()) return;
         try {
@@ -543,7 +527,6 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
 
-            // 澶嶅埗鍒板叕鍏?Downloads
             ContentValues cv = new ContentValues();
             cv.put(MediaStore.MediaColumns.DISPLAY_NAME, zipFile.getName());
             cv.put(MediaStore.MediaColumns.MIME_TYPE, "application/zip");
@@ -559,9 +542,9 @@ public class MainActivity extends AppCompatActivity {
                     while ((n = in.read(buf)) > 0) out.write(buf, 0, n);
                 }
             }
-            Toast.makeText(this, "宸插鍑?ZIP 鍒?Downloads", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "已导出 ZIP 到 Downloads", Toast.LENGTH_SHORT).show();
         } catch (Exception e) {
-            Toast.makeText(this, "瀵煎嚭澶辫触锛? + e.getMessage(), Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "导出失败：" + e.getMessage(), Toast.LENGTH_LONG).show();
         }
     }
 
