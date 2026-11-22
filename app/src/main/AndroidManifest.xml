@@ -3,7 +3,7 @@
 
     <application
         android:allowBackup="true"
-        android:icon="@drawable/ic_launcher"
+        android:icon="@drawable/ic_launcher_white"
         android:label="@string/app_name"
         android:largeHeap="true"
         android:theme="@style/Theme.SuperRes">
@@ -18,7 +18,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
-            <!-- 支持从相册/其它 App 分享图片进来 -->
+            <!-- 支持从相�?其它 App 分享图片进来 -->
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
                 <category android:name="android.intent.category.DEFAULT" />

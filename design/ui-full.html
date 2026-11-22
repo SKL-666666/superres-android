@@ -1,0 +1,1279 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>SuperRes · 完整原型</title>
+<style>
+:root{
+  --bg:#000;
+  --c1:#0E0E10;
+  --c2:#16161A;
+  --c3:#1F1F24;
+  --line:rgba(255,255,255,.075);
+  --line2:rgba(255,255,255,.14);
+  --t1:#fff;
+  --t2:rgba(235,235,245,.62);
+  --t3:rgba(235,235,245,.34);
+  --ac:#9B7BFF;
+  --ac2:#6E9BFF;
+  --glow:rgba(155,123,255,.42);
+  --red:#FF453A;
+  --green:#30D158;
+  --ease:cubic-bezier(.32,.72,0,1);
+  --spring:cubic-bezier(.34,1.4,.64,1);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;
+  -webkit-user-select:none;user-select:none}
+body{
+  background:#060606;color:#fff;
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC",sans-serif;
+  display:flex;align-items:flex-start;justify-content:center;
+  min-height:100vh;padding:36px 24px;gap:40px;flex-wrap:wrap;
+  overscroll-behavior:none;
+}
+
+/* ================= 手机外壳 ================= */
+.phone{
+  width:393px;height:852px;background:var(--bg);border-radius:52px;
+  position:relative;overflow:hidden;flex:none;
+  box-shadow:0 0 0 10px #17171a,0 0 0 11px #2c2c2e,0 40px 90px -18px #000;
+  display:flex;flex-direction:column;
+}
+.notch{position:absolute;top:11px;left:50%;transform:translateX(-50%);
+  width:120px;height:34px;background:#000;border-radius:19px;z-index:200}
+.sbar{height:58px;flex:none;display:flex;align-items:flex-end;justify-content:space-between;
+  padding:0 28px 5px;font-size:15px;font-weight:600;z-index:150;letter-spacing:.2px}
+.sbar .r{display:flex;gap:5px;align-items:center}
+.bars{display:flex;gap:2px;align-items:flex-end;height:11px}
+.bars i{width:3px;background:#fff;border-radius:1px}
+.bars i:nth-child(1){height:4px}.bars i:nth-child(2){height:6px}
+.bars i:nth-child(3){height:8px}.bars i:nth-child(4){height:11px}
+.batt{width:23px;height:11px;border:1.2px solid rgba(255,255,255,.5);border-radius:3px;position:relative}
+.batt::after{content:'';position:absolute;right:-3px;top:3px;width:2px;height:5px;
+  background:rgba(255,255,255,.5);border-radius:0 1px 1px 0}
+.batt i{position:absolute;inset:1.5px;width:72%;background:#fff;border-radius:1.5px}
+
+.vp{flex:1;position:relative;overflow:hidden}
+
+/* ================= 页面 ================= */
+.page{position:absolute;inset:0;display:flex;flex-direction:column;
+  padding:0 20px;transition:transform .46s var(--ease),opacity .3s var(--ease)}
+.page.lf{transform:translateX(-22%) scale(.94);opacity:0;pointer-events:none}
+.page.rt{transform:translateX(22%) scale(.94);opacity:0;pointer-events:none}
+.page.act{transform:none;opacity:1}
+
+.hdr{flex:none;padding:6px 0 16px}
+.h1{font-size:33px;font-weight:700;letter-spacing:-.7px;line-height:1.08}
+.h1 .s{display:block;font-size:13.5px;font-weight:400;color:var(--t2);
+  letter-spacing:0;margin-top:6px}
+
+.lbl{font-size:11px;font-weight:600;letter-spacing:.55px;color:var(--t3);
+  text-transform:uppercase}
+
+/* ================= 模型卡 ================= */
+.models{display:flex;gap:9px;overflow-x:auto;flex:none;
+  padding:2px 0 4px;margin:0 -20px;padding-left:20px;padding-right:20px;
+  scrollbar-width:none}
+.models::-webkit-scrollbar{display:none}
+.mdl{flex:none;min-width:112px;padding:12px 13px;border-radius:17px;
+  background:var(--c1);border:1px solid var(--line);cursor:pointer;
+  position:relative;overflow:hidden;
+  transition:transform .3s var(--spring),border-color .3s,background .3s,box-shadow .3s}
+.mdl::before{content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at 50% -10%,var(--glow),transparent 68%);
+  opacity:0;transition:opacity .36s var(--ease)}
+.mdl.on{background:var(--c2);border-color:rgba(155,123,255,.85);
+  box-shadow:0 0 0 1px rgba(155,123,255,.55),0 8px 26px -8px var(--glow),
+    inset 0 1px 0 rgba(255,255,255,.09);transform:scale(1.015)}
+.mdl.on::before{opacity:.55}
+.mdl .n{font-size:13.5px;font-weight:600;color:var(--t2);position:relative;
+  transition:color .3s;white-space:nowrap}
+.mdl.on .n{color:#fff}
+.mdl .m{font-size:9px;color:var(--t3);margin-top:4px;position:relative;letter-spacing:.3px}
+.mdl.on .m{color:rgba(255,255,255,.5)}
+.mdl:active{transform:scale(.97)}
+
+/* ================= 行 / 分段 ================= */
+.row{display:flex;align-items:center;justify-content:space-between;flex:none}
+.seg{display:flex;background:rgba(118,118,128,.2);border-radius:10px;padding:2px;
+  position:relative}
+.seg .th{position:absolute;top:2px;bottom:2px;left:2px;width:calc(50% - 2px);
+  background:#636366;border-radius:8px;transition:transform .3s var(--spring);
+  box-shadow:0 2px 5px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.13)}
+.seg[data-v="4"] .th{transform:translateX(100%);background:var(--ac)}
+.seg button{position:relative;z-index:2;border:0;background:none;color:var(--t2);
+  font-size:13px;font-weight:600;padding:6px 20px;cursor:pointer;
+  font-family:inherit;transition:color .3s}
+.seg button.on{color:#fff}
+
+/* ================= 图片区 ================= */
+.stage{flex:1;min-height:0;margin-top:14px;display:flex;flex-direction:column}
+
+.empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  border:1.5px dashed rgba(255,255,255,.12);border-radius:22px;cursor:pointer;
+  background:radial-gradient(ellipse at 50% 105%,rgba(155,123,255,.08),transparent 62%);
+  transition:transform .25s var(--ease),border-color .25s;position:relative;overflow:hidden}
+.empty:active{transform:scale(.985);border-color:rgba(155,123,255,.45)}
+.empty svg{width:42px;height:42px;color:var(--ac);opacity:.92;
+  filter:drop-shadow(0 0 11px var(--glow));transition:transform .35s var(--spring)}
+.empty:active svg{transform:scale(1.1)}
+.empty .t{margin-top:13px;font-size:15px;font-weight:500;color:var(--t2)}
+.empty .s{margin-top:4px;font-size:11.5px;color:var(--t3)}
+
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;align-content:start;
+  overflow-y:auto;padding-bottom:4px}
+.grid::-webkit-scrollbar{display:none}
+.cell{aspect-ratio:1;border-radius:13px;overflow:hidden;position:relative;
+  background:#111;cursor:pointer;box-shadow:0 0 0 1px rgba(255,255,255,.055);
+  animation:pop .4s var(--spring) backwards;will-change:transform}
+@keyframes pop{from{opacity:0;transform:scale(.85)}to{opacity:1;transform:scale(1)}}
+.cell img{width:100%;height:100%;object-fit:cover;display:block}
+.cell .idx{position:absolute;left:5px;top:5px;min-width:16px;height:16px;
+  background:rgba(0,0,0,.68);backdrop-filter:blur(8px);border-radius:8px;
+  font-size:9px;font-weight:600;display:flex;align-items:center;justify-content:center;
+  padding:0 4px}
+.cell .del{position:absolute;right:4px;top:4px;width:19px;height:19px;
+  background:rgba(0,0,0,.62);backdrop-filter:blur(8px);border-radius:50%;
+  display:flex;align-items:center;justify-content:center}
+.cell .del svg{width:8px;height:8px}
+.cell .badge{position:absolute;left:0;right:0;bottom:0;
+  background:linear-gradient(transparent,rgba(0,0,0,.8));
+  font-size:8.5px;padding:10px 5px 4px;text-align:center;color:#CFC8FF;
+  opacity:0;transition:opacity .3s}
+.cell.done .badge{opacity:1}
+.cell.done{box-shadow:0 0 0 1.5px rgba(155,123,255,.6),
+  inset 0 0 16px rgba(155,123,255,.16)}
+
+/* ================= 主按钮 ================= */
+.ctar{flex:none;padding:13px 0 6px}
+.cta{width:100%;height:53px;border:0;border-radius:16px;
+  background:linear-gradient(180deg,#AB8FFF,#8464F0);color:#fff;
+  font-size:16.5px;font-weight:600;font-family:inherit;cursor:pointer;
+  position:relative;overflow:hidden;letter-spacing:.2px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 8px 24px -8px rgba(132,100,240,.85);
+  transition:transform .18s var(--spring),box-shadow .3s;display:flex;
+  align-items:center;justify-content:center;gap:7px}
+.cta::after{content:'';position:absolute;top:0;left:-120%;width:55%;height:100%;
+  background:linear-gradient(100deg,transparent,rgba(255,255,255,.26),transparent);
+  animation:shine 4.2s ease-in-out infinite}
+@keyframes shine{0%,80%{left:-120%}100%{left:170%}}
+.cta:active{transform:scale(.967)}
+.cta:disabled{background:linear-gradient(180deg,#242427,#1C1C1F);color:var(--t3);
+  box-shadow:none;cursor:not-allowed}
+.cta:disabled::after{display:none}
+
+/* ================= 底部 Tab ================= */
+.tabs{flex:none;height:76px;display:flex;padding:0 8px 22px;z-index:30;
+  background:rgba(9,9,10,.8);backdrop-filter:blur(32px) saturate(170%);
+  border-top:.5px solid rgba(255,255,255,.085)}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:3px;border:0;background:none;cursor:pointer;font-family:inherit;
+  padding-top:5px;transition:transform .2s var(--spring);position:relative}
+.tab:active{transform:scale(.86)}
+.tab svg{width:22px;height:22px;stroke:var(--t3);stroke-width:1.75;fill:none;
+  stroke-linecap:round;stroke-linejoin:round;transition:stroke .3s,filter .34s}
+.tab span{font-size:9.5px;font-weight:500;color:var(--t3);transition:color .3s}
+.tab.on svg{stroke:var(--ac);filter:drop-shadow(0 0 7px var(--glow))}
+.tab.on span{color:var(--ac);font-weight:600}
+.homebar{position:absolute;bottom:7px;left:50%;transform:translateX(-50%);
+  width:132px;height:5px;background:rgba(255,255,255,.5);border-radius:3px;z-index:40}
+
+/* ================= 处理遮罩 ================= */
+.ov{position:absolute;inset:0;z-index:300;display:flex;align-items:center;
+  justify-content:center;background:rgba(0,0,0,.5);
+  backdrop-filter:blur(24px) saturate(150%);
+  opacity:0;pointer-events:none;transition:opacity .28s var(--ease)}
+.ov.on{opacity:1;pointer-events:auto}
+.ovc{width:238px;padding:26px 22px 20px;border-radius:26px;
+  background:rgba(24,24,28,.7);border:.5px solid rgba(255,255,255,.12);
+  box-shadow:0 30px 60px -18px #000,inset 0 1px 0 rgba(255,255,255,.07);
+  display:flex;flex-direction:column;align-items:center;
+  transform:scale(.88);opacity:0;transition:transform .46s var(--spring),opacity .3s}
+.ov.on .ovc{transform:scale(1);opacity:1}
+.ring{width:76px;height:76px;position:relative}
+.ring svg{width:76px;height:76px;transform:rotate(-90deg)}
+.ring .tk{fill:none;stroke:rgba(255,255,255,.09);stroke-width:5}
+.ring .br{fill:none;stroke:url(#gg);stroke-width:5;stroke-linecap:round;
+  stroke-dasharray:207;stroke-dashoffset:207;
+  transition:stroke-dashoffset .4s var(--ease);filter:drop-shadow(0 0 6px var(--glow))}
+.ring .pc{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-size:17px;font-weight:600;letter-spacing:-.3px}
+.ovt{margin-top:16px;font-size:12.5px;color:var(--t2);text-align:center;
+  animation:br 2s ease-in-out infinite;min-height:17px}
+@keyframes br{0%,100%{opacity:.5}50%{opacity:1}}
+.ovb{margin-top:14px;width:100%;height:39px;border-radius:12px;border:0;
+  background:rgba(255,255,255,.09);color:#fff;font-size:13.5px;font-weight:500;
+  font-family:inherit;cursor:pointer;transition:background .2s}
+.ovb:active{background:rgba(255,255,255,.16)}
+
+/* ================= 对比视图 ================= */
+.cmp{position:absolute;inset:0;background:#000;z-index:250;display:flex;
+  flex-direction:column;opacity:0;pointer-events:none;transition:opacity .28s}
+.cmp.on{opacity:1;pointer-events:auto}
+.cmpt{flex:none;height:54px;display:flex;align-items:center;justify-content:space-between;
+  padding:0 16px;font-size:14px;font-weight:600;z-index:6}
+.cmpt .l{display:flex;flex-direction:column;gap:2px}
+.cmpt .l span:last-child{font-size:10.5px;font-weight:400;color:var(--t3);
+  font-variant-numeric:tabular-nums}
+.cmpt button{border:0;background:rgba(255,255,255,.1);color:#fff;width:29px;height:29px;
+  border-radius:50%;cursor:pointer;font-size:14px;font-family:inherit;
+  display:flex;align-items:center;justify-content:center}
+.cmpb{flex:1;position:relative;overflow:hidden;touch-action:none}
+.pair{position:absolute;inset:0;transition:transform .2s var(--ease)}
+.pair img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;
+  pointer-events:none}
+.clip{position:absolute;inset:0;will-change:clip-path}
+.line{position:absolute;top:0;bottom:0;width:2px;background:rgba(255,255,255,.92);
+  z-index:5;box-shadow:0 0 16px rgba(0,0,0,.85);pointer-events:none}
+.hdl{position:absolute;top:50%;transform:translate(-50%,-50%);width:42px;height:42px;
+  border-radius:50%;background:rgba(255,255,255,.96);z-index:6;pointer-events:none;
+  box-shadow:0 4px 18px rgba(0,0,0,.55);display:flex;align-items:center;
+  justify-content:center;gap:3px}
+.hdl i{width:2px;height:12px;background:#1a1a1a;border-radius:1px}
+.tag{position:absolute;top:12px;font-size:10.5px;font-weight:600;
+  background:rgba(0,0,0,.6);backdrop-filter:blur(10px);padding:4px 9px;
+  border-radius:8px;z-index:4;pointer-events:none}
+.cmpf{flex:none;padding:10px 16px 20px;display:flex;gap:9px;z-index:6}
+.cmpf button{flex:1;height:44px;border-radius:13px;border:0;font-family:inherit;
+  font-size:13.5px;font-weight:500;cursor:pointer;
+  background:rgba(255,255,255,.09);color:#fff;transition:transform .18s}
+.cmpf button:active{transform:scale(.96)}
+.cmpf button.pri{background:linear-gradient(180deg,#AB8FFF,#8464F0);font-weight:600}
+
+/* ================= 历史 ================= */
+.hit{display:flex;gap:13px;align-items:center;padding:11px 0;
+  border-bottom:.5px solid var(--line);cursor:pointer;transition:opacity .2s}
+.hit:active{opacity:.55}
+.hith{width:52px;height:52px;border-radius:11px;overflow:hidden;flex:none;
+  background:var(--c2);box-shadow:0 0 0 1px rgba(255,255,255,.06)}
+.hith img{width:100%;height:100%;object-fit:cover}
+.hi{flex:1;min-width:0}
+.hi .a{font-size:13.5px;font-weight:500;white-space:nowrap;overflow:hidden;
+  text-overflow:ellipsis}
+.hi .b{font-size:11px;color:var(--t3);margin-top:2px;
+  font-variant-numeric:tabular-nums}
+
+/* ================= 设置 ================= */
+.grp{background:var(--c1);border-radius:15px;overflow:hidden;margin-bottom:16px;
+  border:.5px solid var(--line)}
+.gi{display:flex;align-items:center;justify-content:space-between;padding:13px 15px;
+  border-bottom:.5px solid var(--line);font-size:14.5px}
+.gi:last-child{border-bottom:0}
+.gi .l{display:flex;align-items:center;gap:11px}
+.gi .ic{width:27px;height:27px;border-radius:7px;display:flex;align-items:center;
+  justify-content:center;flex:none}
+.gi .ic svg{width:14px;height:14px;stroke:#fff;stroke-width:1.9;fill:none;
+  stroke-linecap:round;stroke-linejoin:round}
+.gi .v{font-size:13.5px;color:var(--t3);font-variant-numeric:tabular-nums;
+  display:flex;align-items:center;gap:5px}
+.sw{width:46px;height:27px;border-radius:14px;background:#39393D;position:relative;
+  cursor:pointer;transition:background .3s var(--ease);flex:none}
+.sw i{position:absolute;top:2.5px;left:2.5px;width:22px;height:22px;background:#fff;
+  border-radius:50%;box-shadow:0 2px 5px rgba(0,0,0,.35);
+  transition:transform .3s var(--spring)}
+.sw.on{background:var(--ac);box-shadow:0 0 12px -2px var(--glow)}
+.sw.on i{transform:translateX(19px)}
+
+/* ================= Toast ================= */
+.toast{position:absolute;left:50%;bottom:104px;transform:translate(-50%,14px);
+  background:rgba(38,38,42,.94);backdrop-filter:blur(18px);color:#fff;
+  font-size:12.5px;padding:10px 17px;border-radius:11px;z-index:400;
+  opacity:0;pointer-events:none;transition:all .3s var(--ease);
+  border:.5px solid rgba(255,255,255,.1);max-width:76%;text-align:center}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+
+/* ================= 说明栏 ================= */
+.legend{width:330px;color:#8a8a90;font-size:12.5px;line-height:1.8;flex:none}
+.legend h3{color:#fff;font-size:14.5px;margin-bottom:11px;font-weight:600}
+.legend b{color:#B9AEFF;font-weight:500}
+.legend p{margin:0 0 7px}
+.legend hr{border:0;border-top:1px solid #1c1c1f;margin:16px 0}
+.legend .k{display:inline-block;background:#131315;border:1px solid #26262a;
+  border-radius:5px;padding:1px 6px;font-size:11px;color:#9b9b9f;
+  font-family:ui-monospace,monospace;margin:0 1px}
+.legend .chk{color:var(--green)}
+</style>
+</head>
+<body>
+
+<div class="phone">
+  <div class="notch"></div>
+  <div class="sbar">
+    <div>12:33</div>
+    <div class="r">
+      <div class="bars"><i></i><i></i><i></i><i></i></div>
+      <svg width="15" height="11" viewBox="0 0 16 12" style="margin:0 2px">
+        <path d="M8 10.5L10 8.4A3 3 0 0 0 6 8.4Z" fill="#fff"/>
+        <path d="M11.6 6.6A5 5 0 0 0 4.4 6.6" stroke="#fff" stroke-width="1.3" fill="none" stroke-linecap="round" opacity=".9"/>
+        <path d="M13.8 4.4A8 8 0 0 0 2.2 4.4" stroke="#fff" stroke-width="1.3" fill="none" stroke-linecap="round" opacity=".55"/>
+      </svg>
+      <div class="batt"><i></i></div>
+    </div>
+  </div>
+
+  <div class="vp">
+
+    <!-- ============ 超分页 ============ -->
+    <div class="page act" id="pg-super">
+      <div class="hdr">
+        <div class="h1">画质增强<span class="s">本地推理 · 不上传 · 无网络</span></div>
+      </div>
+
+      <div class="lbl" style="margin-bottom:9px">模型</div>
+      <div class="models" id="models"></div>
+      <div id="mdlDesc" style="font-size:11px;color:var(--t3);margin-top:9px;
+        padding-left:2px"></div>
+
+      <div class="row" style="margin-top:16px">
+        <div class="lbl">倍率</div>
+        <div class="seg" id="seg" data-v="2">
+          <div class="th"></div>
+          <button class="on" data-s="2">×2</button>
+          <button data-s="4">×4</button>
+        </div>
+      </div>
+
+      <div class="stage">
+        <div class="empty" id="empty">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="4.5"/>
+            <circle cx="8.6" cy="8.6" r="1.7"/>
+            <path d="M20.5 15.5l-4.6-4.6L6.5 20.5"/>
+          </svg>
+          <div class="t">选择图片</div>
+          <div class="s">最多 9 张 · 支持从相册分享</div>
+        </div>
+        <div class="grid" id="grid" style="display:none"></div>
+      </div>
+
+      <div class="ctar">
+        <button class="cta" id="cta" disabled>开始增强</button>
+      </div>
+    </div>
+
+    <!-- ============ 历史页 ============ -->
+    <div class="page rt" id="pg-hist">
+      <div class="hdr">
+        <div class="h1">历史<span class="s" id="histSub">本机处理记录</span></div>
+      </div>
+      <div class="stage" style="margin-top:0;overflow-y:auto" id="histList"></div>
+      <div class="ctar" id="histFoot" style="display:none">
+        <button class="cta" id="clearHist"
+          style="background:linear-gradient(180deg,#2C2C30,#232326);font-size:14px;
+          box-shadow:none">清空记录</button>
+      </div>
+    </div>
+
+    <!-- ============ 设置页 ============ -->
+    <div class="page rt" id="pg-set">
+      <div class="hdr">
+        <div class="h1">设置<span class="s">推理参数与外观</span></div>
+      </div>
+      <div class="stage" style="margin-top:0;overflow-y:auto">
+
+        <div class="grp">
+          <div class="gi">
+            <div class="l">
+              <div class="ic" style="background:#5E5CE6">
+                <svg viewBox="0 0 24 24"><path d="M12 3v18M3 12h18"/></svg>
+              </div><span>仅亮度通道</span>
+            </div>
+            <div class="sw on" data-k="luma"><i></i></div>
+          </div>
+          <div class="gi">
+            <div class="l">
+              <div class="ic" style="background:#30D158">
+                <svg viewBox="0 0 24 24"><path d="M13 2L4.5 13.5H11l-1 8.5L19.5 10H13z"/></svg>
+              </div><span>加速档 int8</span>
+            </div>
+            <div class="sw" data-k="int8"><i></i></div>
+          </div>
+          <div class="gi">
+            <div class="l">
+              <div class="ic" style="background:#FF9F0A">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/>
+                <path d="M12 8v4.5l2.6 1.6"/></svg>
+              </div><span>保留处理记录</span>
+            </div>
+            <div class="sw on" data-k="keep"><i></i></div>
+          </div>
+        </div>
+
+        <div class="grp">
+          <div class="gi">
+            <div class="l">
+              <div class="ic" style="background:#64D2FF">
+                <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.6"/>
+                <rect x="14" y="3" width="7" height="7" rx="1.6"/>
+                <rect x="3" y="14" width="7" height="7" rx="1.6"/>
+                <rect x="14" y="14" width="7" height="7" rx="1.6"/></svg>
+              </div><span>推理线程</span>
+            </div>
+            <div class="v" id="vThreads">6</div>
+          </div>
+          <div class="gi">
+            <div class="l">
+              <div class="ic" style="background:#BF5AF2">
+                <svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
+              </div><span>分块尺寸</span>
+            </div>
+            <div class="v" id="vTile">256 px</div>
+          </div>
+          <div class="gi">
+            <div class="l">
+              <div class="ic" style="background:#FFD60A">
+                <svg viewBox="0 0 24 24"><path d="M4 17l4.5-5 3.5 3.5L16.5 10 20 13"/>
+                <rect x="3" y="4" width="18" height="16" rx="3"/></svg>
+              </div><span>输出质量</span>
+            </div>
+            <div class="v" id="vQuality">95%</div>
+          </div>
+        </div>
+
+        <div class="grp">
+          <div class="gi">
+            <div class="l">
+              <div class="ic" style="background:#8E8E93">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/>
+                <path d="M12 11v5.5M12 7.6v.4"/></svg>
+              </div><span>关于 SuperRes</span>
+            </div>
+            <div class="v">v4.0 ›</div>
+          </div>
+        </div>
+
+        <div style="text-align:center;font-size:10.5px;color:var(--t3);
+          padding:6px 0 20px;line-height:1.7">
+          推理框架 ncnn · 纯 CPU<br>
+          所有图像仅在本机处理
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ 处理遮罩 ============ -->
+    <div class="ov" id="ov">
+      <div class="ovc">
+        <div class="ring">
+          <svg viewBox="0 0 76 76">
+            <defs><linearGradient id="gg" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#A78BFF"/>
+              <stop offset="100%" stop-color="#6E9BFF"/>
+            </linearGradient></defs>
+            <circle class="tk" cx="38" cy="38" r="33"/>
+            <circle class="br" id="ringBar" cx="38" cy="38" r="33"/>
+          </svg>
+          <div class="pc" id="ringPct">0%</div>
+        </div>
+        <div class="ovt" id="ovText">准备中…</div>
+        <button class="ovb" id="ovCancel">取消</button>
+      </div>
+    </div>
+
+    <!-- ============ 对比视图 ============ -->
+    <div class="cmp" id="cmp">
+      <div class="cmpt">
+        <div class="l">
+          <span>对比</span>
+          <span id="cmpInfo"></span>
+        </div>
+        <button id="cmpClose">✕</button>
+      </div>
+      <div class="cmpb" id="cmpBody">
+        <div class="pair" id="pair">
+          <img id="imgA" alt="">
+          <div class="clip" id="clip"><img id="imgB" alt=""></div>
+          <div class="tag" style="left:12px">原图</div>
+          <div class="tag" style="right:12px">增强</div>
+          <div class="line" id="cLine"></div>
+          <div class="hdl" id="cHdl"><i></i><i></i></div>
+        </div>
+      </div>
+      <div class="cmpf">
+        <button id="cmpToggle">看原图</button>
+        <button class="pri" id="cmpSave">保存</button>
+      </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+  </div>
+
+  <!-- ============ 底部 Tab ============ -->
+  <div class="tabs">
+    <button class="tab on" data-p="pg-super">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="4.5"/>
+      <path d="M12 8.2v7.6M8.2 12h7.6"/></svg>
+      <span>超分</span>
+    </button>
+    <button class="tab" data-p="pg-hist">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/>
+      <path d="M12 7.6V12l2.9 1.9"/></svg>
+      <span>历史</span>
+    </button>
+    <button class="tab" data-p="pg-set">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.1"/>
+      <path d="M12 2.8v2.4M12 18.8v2.4M4.5 12H2.1M21.9 12h-2.4M6.7 6.7L5 5M19 19l-1.7-1.7M6.7 17.3L5 19M19 5l-1.7 1.7"/></svg>
+      <span>设置</span>
+    </button>
+  </div>
+  <div class="homebar"></div>
+</div>
+
+<div class="legend">
+  <h3>完整功能原型</h3>
+  <p><b>真实选图</b> 点空状态打开文件选择，最多 9 张</p>
+  <p><b>真实处理</b> canvas 上采样 + 分模型锐化，不是假动画</p>
+  <p><b>批量队列</b> 逐张处理，每张独立进度，可取消</p>
+  <p><b>对比视图</b> 拖动分割线 / 双指缩放 / 双击复位 / 长按看原图</p>
+  <p><b>保存</b> 对比页可直接下载处理后图片</p>
+  <p><b>历史</b> localStorage 持久化，刷新不丢，可清空</p>
+  <p><b>设置</b> 全部生效：亮度通道、int8 模拟、记录开关</p>
+  <hr>
+  <p style="color:#666">
+    无图片时点空状态可用内置示例图<br>
+    <span class="k">grid</span> 1/2/3 张均不拉伸<br>
+    圆环进度 <span class="k">stroke-dashoffset</span> 独立轨道
+  </p>
+</div>
+
+<script>
+/* ============================================================
+   模型定义
+   ============================================================ */
+const MODELS = [
+  { id:'animevideov3', name:'AnimeVideo', meta:'0.62M · 1.2MB',
+    desc:'自然柔和，速度最快', tag:'日常随手拍',
+    sharp:0.45, contrast:1.02, denoise:0, speed:1.0 },
+  { id:'x4v3', name:'Real-ESRGAN', meta:'1.2M · 2.4MB',
+    desc:'通透锐利，细节丰富', tag:'想要更锐',
+    sharp:0.85, contrast:1.05, denoise:0, speed:0.55 },
+  { id:'wdn', name:'WDN', meta:'1.2M · 2.4MB',
+    desc:'低噪稳健，夜景友好', tag:'夜景 高噪',
+    sharp:0.5, contrast:1.03, denoise:0.45, speed:0.5 },
+];
+
+let state = {
+  model: 0,
+  scale: 2,
+  luma: true,
+  int8: false,
+  keep: true,
+  threads: 6,
+  tile: 256,
+  quality: 95,
+  items: [],       // {name, url, src(Image), w, h, outUrl, outW, outH, ms}
+  busy: false,
+  cancel: false,
+  cmpIndex: -1,
+  cmpSplit: 50,
+  cmpZoom: 1,
+  cmpPanX: 0,
+  cmpPanY: 0,
+  showOrig: false,
+};
+
+/* ============================================================
+   UI 基础
+   ============================================================ */
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+
+function toast(msg, ms = 1700){
+  const t = $('#toast');
+  t.textContent = msg;
+  t.classList.add('on');
+  clearTimeout(t._h);
+  t._h = setTimeout(() => t.classList.remove('on'), ms);
+}
+
+/* ============================================================
+   模型卡渲染
+   ============================================================ */
+function renderModels(){
+  const box = $('#models');
+  box.innerHTML = '';
+  MODELS.forEach((m, i) => {
+    const d = document.createElement('div');
+    d.className = 'mdl' + (i === state.model ? ' on' : '');
+    d.innerHTML = `<div class="n">${m.name}</div><div class="m">${m.meta}</div>`;
+    d.onclick = () => {
+      state.model = i;
+      renderModels();
+      bump();
+    };
+    box.appendChild(d);
+  });
+  const m = MODELS[state.model];
+  $('#mdlDesc').textContent = `${m.desc} · 适合：${m.tag}`;
+}
+
+(function bump(){})();
+
+/* ============================================================
+   倍率分段
+   ============================================================ */
+$('#seg').querySelectorAll('button').forEach(b => {
+  b.onclick = () => {
+    state.scale = +b.dataset.s;
+    $('#seg').dataset.v = state.scale;
+    $('#seg').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+    // 已有结果则失效
+    state.items.forEach(it => { it.outUrl = null; });
+    renderGrid();
+    updateCta();
+  };
+});
+
+/* ============================================================
+   图片选择
+   ============================================================ */
+const fileInput = document.createElement('input');
+fileInput.type = 'file';
+fileInput.accept = 'image/*';
+fileInput.multiple = true;
+fileInput.style.display = 'none';
+document.body.appendChild(fileInput);
+
+fileInput.onchange = async e => {
+  const files = [...e.target.files].slice(0, 9 - state.items.length);
+  if (!files.length) return;
+  for (const f of files){
+    try{
+      const img = await loadImage(f);
+      state.items.push({
+        name: f.name.replace(/\.[^.]+$/, ''),
+        url: f._url || URL.createObjectURL(f),
+        src: img,
+        w: img.naturalWidth,
+        h: img.naturalHeight,
+        outUrl: null, outW: 0, outH: 0, ms: 0,
+      });
+    } catch(err){ console.warn(err); }
+  }
+  fileInput.value = '';
+  renderGrid();
+  updateCta();
+  if (state.items.length) toast(`已添加 ${files.length} 张`);
+};
+
+function loadImage(file){
+  return new Promise((res, rej) => {
+    file._url = URL.createObjectURL(file);
+    const im = new Image();
+    im.onload = () => res(im);
+    im.onerror = rej;
+    im.src = file._url;
+  });
+}
+
+$('#empty').onclick = () => {
+  fileInput.click();
+};
+
+/* 空状态长按 → 示例图 */
+let emptyPress = null;
+$('#empty').addEventListener('pointerdown', e => {
+  emptyPress = setTimeout(() => { addDemo(); emptyPress = null; }, 700);
+});
+$('#empty').addEventListener('pointerup', () => {
+  if (emptyPress){ clearTimeout(emptyPress); emptyPress = null; }
+});
+$('#empty').addEventListener('pointercancel', () => {
+  if (emptyPress){ clearTimeout(emptyPress); emptyPress = null; }
+});
+
+/* 生成示例图（带纹理，便于观察锐化差异） */
+function demoDataURL(seed, w = 640){
+  const c = document.createElement('canvas');
+  c.width = c.height = w;
+  const x = c.getContext('2d');
+  const palettes = [
+    ['#22314f','#6f5a9e','#d8a563'],
+    ['#12372a','#3f7d5f','#cfe59a'],
+    ['#3a1f2e','#9e4a58','#f0c19c'],
+    ['#16283c','#3f7398','#c6d8e6'],
+    ['#2e2415','#7d5f33','#e4cc9a'],
+    ['#241a2f','#63468a','#c49fe0'],
+  ];
+  const p = palettes[seed % palettes.length];
+  const g = x.createLinearGradient(0, 0, w, w);
+  g.addColorStop(0, p[0]); g.addColorStop(.5, p[1]); g.addColorStop(1, p[2]);
+  x.fillStyle = g; x.fillRect(0, 0, w, w);
+
+  // 伪建筑窗格
+  x.globalAlpha = .35;
+  for (let r = 0; r < 9; r++){
+    for (let cc = 0; cc < 9; cc++){
+      if (Math.random() > .45){
+        x.fillStyle = Math.random() > .5 ? 'rgba(0,0,0,.5)' : 'rgba(255,255,255,.25)';
+        x.fillRect(w*(.06 + cc*.1), w*(.06 + r*.1), w*.065, w*.065);
+      }
+    }
+  }
+  x.globalAlpha = 1;
+
+  // 细线（检验锐化）
+  x.strokeStyle = 'rgba(0,0,0,.35)'; x.lineWidth = 1.2;
+  for (let i = 0; i < 14; i++){
+    const y = w * (.05 + i * .068);
+    x.beginPath(); x.moveTo(0, y); x.lineTo(w, y + (Math.random()-.5)*7); x.stroke();
+  }
+  // 噪点（检验去噪）
+  const img = x.getImageData(0,0,w,w);
+  for (let i = 0; i < img.data.length; i += 4){
+    const n = (Math.random()-.5) * 16;
+    img.data[i] += n; img.data[i+1] += n; img.data[i+2] += n;
+  }
+  x.putImageData(img, 0, 0);
+  return c.toDataURL('image/jpeg', .92);
+}
+
+// 悬停提示
+$('#empty').title = '点击选图 · 长按 0.7s 添加示例图';
+
+function addDemo(){
+  const add = Math.min(3, 9 - state.items.length);
+  for (let i = 0; i < add; i++){
+    const url = demoDataURL(state.items.length + i);
+    const im = new Image();
+    im.src = url;
+    state.items.push({
+      name: '示例 ' + (state.items.length + 1),
+      url, src: im, w: 640, h: 640,
+      outUrl: null, outW: 0, outH: 0, ms: 0,
+    });
+  }
+  renderGrid();
+  updateCta();
+  toast(`已添加 ${add} 张示例图`);
+}
+
+/* ============================================================
+   网格渲染（不拉伸的关键：aspect-ratio + 固定 3 列）
+   ============================================================ */
+function renderGrid(){
+  const grid = $('#grid');
+  const empty = $('#empty');
+  if (!state.items.length){
+    grid.style.display = 'none';
+    empty.style.display = 'flex';
+    grid.innerHTML = '';
+    return;
+  }
+  empty.style.display = 'none';
+  grid.style.display = 'grid';
+  grid.innerHTML = '';
+
+  state.items.forEach((it, i) => {
+    const c = document.createElement('div');
+    c.className = 'cell' + (it.outUrl ? ' done' : '');
+    c.style.animationDelay = (i * 45) + 'ms';
+    c.innerHTML = `
+      <img src="${it.outUrl || it.url}" alt="">
+      <div class="idx">${i + 1}</div>
+      <div class="del"><svg viewBox="0 0 24 24" fill="none" stroke="#fff"
+        stroke-width="3.4" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg></div>
+      <div class="badge">${it.outW ? it.outW + '×' + it.outH : ''}</div>`;
+    c.querySelector('.del').onclick = e => {
+      e.stopPropagation();
+      state.items.splice(i, 1);
+      state.items.forEach(x => { x.outUrl = null; });
+      renderGrid();
+      updateCta();
+    };
+    c.onclick = () => {
+      if (!it.outUrl){ toast('尚未处理'); return; }
+      openCompare(i);
+    };
+    grid.appendChild(c);
+  });
+}
+
+function updateCta(){
+  const b = $('#cta');
+  const n = state.items.length;
+  const done = state.items.filter(x => x.outUrl).length;
+  b.disabled = n === 0 || state.busy;
+  if (state.busy) b.textContent = '处理中…';
+  else if (done === n && n > 0) b.textContent = `重新增强 · ${n} 张`;
+  else b.textContent = n ? `开始增强 · ${n} 张` : '开始增强';
+}
+
+/* ============================================================
+   图像处理（canvas 实现，真实可感知的差异）
+   ============================================================ */
+function processOne(item, model, scale, lumaOnly, onPct){
+  return new Promise(resolve => {
+    const MAXIN = 1600;
+    const inW = item.w, inH = item.h;
+    const ratio = Math.min(1, MAXIN / Math.max(inW, inH));
+    const sw = Math.round(inW * ratio), sh = Math.round(inH * ratio);
+
+    // 1) 上采样
+    const up = document.createElement('canvas');
+    up.width = Math.min(4096, Math.round(sw * scale));
+    up.height = Math.min(4096, Math.round(sh * scale));
+    const ux = up.getContext('2d');
+    ux.imageSmoothingEnabled = true;
+    ux.imageSmoothingQuality = 'high';
+    if (model.denoise > 0){
+      ux.filter = `blur(${(0.5 + model.denoise).toFixed(2)}px)`;
+    }
+    ux.drawImage(item.src, 0, 0, up.width, up.height);
+    ux.filter = 'none';
+
+    onPct && onPct(45);
+
+    // 2) 锐化（3x3 非锐化掩蔽）
+    const W = up.width, H = up.height;
+    const src = ux.getImageData(0, 0, W, H);
+    const out = ux.createImageData(W, H);
+    const d = src.data, o = out.data;
+    const a = model.sharp;
+    const ctr = 1 + 4 * a;
+    const nb = -a;
+
+    for (let y = 0; y < H; y++){
+      for (let x = 0; x < W; x++){
+        const i = (y * W + x) * 4;
+        const cnt = model.contrast;
+        for (let ch = 0; ch < 3; ch++){
+          let v;
+          if (x === 0 || y === 0 || x === W - 1 || y === H - 1){
+            v = d[i + ch];
+          } else {
+            const up2 = i - W*4, dn = i + W*4;
+            v = d[i+ch] * ctr
+              + nb * (d[i-4+ch] + d[i+4+ch] + d[up2+ch] + d[dn+ch]);
+          }
+          // 对比度
+          v = (v - 128) * cnt + 128;
+          o[i + ch] = v < 0 ? 0 : v > 255 ? 255 : v;
+        }
+        o[i + 3] = 255;
+      }
+      if (y % 220 === 0) onPct && onPct(45 + Math.round(y / H * 45));
+    }
+
+    // 仅亮度模式：色度回填原图（模拟 Y 通道推理）
+    if (lumaOnly){
+      const small = document.createElement('canvas');
+      small.width = W; small.height = H;
+      const sx = small.getContext('2d');
+      sx.imageSmoothingEnabled = true;
+      sx.imageSmoothingQuality = 'high';
+      sx.drawImage(item.src, 0, 0, W, H);
+      const sd = sx.getImageData(0, 0, W, H).data;
+      for (let i = 0; i < d.length; i += 4){
+        const Y = 0.299*o[i] + 0.587*o[i+1] + 0.114*o[i+2];
+        const Cb = sd[i+2] - 128;      // 源图蓝
+        const Cr = sd[i] - 128;        // 源图红
+        let R = Y + 1.402 * Cr;
+        let G = Y - 0.344136 * Cb - 0.714136 * Cr;
+        let B = Y + 1.772 * Cb;
+        o[i]   = R < 0 ? 0 : R > 255 ? 255 : R;
+        o[i+1] = G < 0 ? 0 : G > 255 ? 255 : G;
+        o[i+2] = B < 0 ? 0 : B > 255 ? 255 : B;
+      }
+    }
+
+    ux.putImageData(out, 0, 0);
+    onPct && onPct(95);
+
+    up.toBlob(blob => {
+      const url = URL.createObjectURL(blob);
+      resolve({ url, w: up.width, h: up.height });
+    }, 'image/jpeg', state.quality / 100);
+  });
+}
+
+/* ============================================================
+   批量队列
+   ============================================================ */
+const RING_LEN = 207;
+
+function setRing(p){
+  $('#ringBar').style.strokeDashoffset = RING_LEN - RING_LEN * p / 100;
+  $('#ringPct').textContent = Math.round(p) + '%';
+}
+
+$('#cta').onclick = async () => {
+  if (state.busy || !state.items.length) return;
+  state.busy = true;
+  state.cancel = false;
+  updateCta();
+
+  const ov = $('#ov');
+  ov.classList.add('on');
+  $('#ovText').textContent = '加载模型…';
+  setRing(0);
+
+  const model = MODELS[state.model];
+  const scale = state.scale;
+  const t0 = performance.now();
+
+  for (let i = 0; i < state.items.length; i++){
+    if (state.cancel) break;
+    const it = state.items[i];
+    $('#ovText').textContent = `处理第 ${i+1} / ${state.items.length} 张`;
+    setRing(0);
+
+    const start = performance.now();
+    const res = await processOne(it, model, scale, state.luma, p => {
+      const base = (i / state.items.length) * 100;
+      setRing(base + p / state.items.length);
+    });
+    it.outUrl = res.url;
+    it.outW = res.w;
+    it.outH = res.h;
+    it.ms = Math.round(performance.now() - start);
+    renderGrid();
+  }
+
+  setRing(100);
+  $('#ovText').textContent = state.cancel ? '已取消' : '完成';
+
+  if (state.keep && !state.cancel) saveHistory(t0);
+
+  setTimeout(() => {
+    ov.classList.remove('on');
+    state.busy = false;
+    updateCta();
+    if (!state.cancel) toast('处理完成，点缩略图对比');
+  }, 500);
+};
+
+$('#ovCancel').onclick = () => {
+  state.cancel = true;
+  $('#ovText').textContent = '正在取消…';
+};
+
+/* ============================================================
+   历史（localStorage）
+   ============================================================ */
+const HKEY = 'superres_v4_history';
+
+function saveHistory(startTs){
+  if (!state.keep) return;
+  try{
+    const list = loadHistory();
+    const total = Math.round(performance.now() - startTs);
+    const first = state.items[0];
+    const model = MODELS[state.model];
+
+    // 生成缩略图
+    const c = document.createElement('canvas');
+    c.width = c.height = 96;
+    const x = c.getContext('2d');
+    const im = new Image();
+    im.onload = () => {
+      x.drawImage(im, 0, 0, 96, 96);
+      const thumb = c.toDataURL('image/jpeg', .6);
+      list.unshift({
+        name: state.items.length > 1
+          ? `${first.name} 等 ${state.items.length} 张` : first.name,
+        thumb,
+        inW: first.w, inH: first.h,
+        outW: first.outW, outH: first.outH,
+        scale: state.scale,
+        model: model.name,
+        ms: total,
+        ts: Date.now(),
+      });
+      localStorage.setItem(HKEY, JSON.stringify(list.slice(0, 20)));
+      renderHistory();
+    };
+    im.src = first.outUrl || first.url;
+  } catch(e){ console.warn('history fail', e); }
+}
+
+function loadHistory(){
+  try{ return JSON.parse(localStorage.getItem(HKEY) || '[]'); }
+  catch(e){ return []; }
+}
+
+function renderHistory(){
+  const list = loadHistory();
+  const box = $('#histList');
+  const foot = $('#histFoot');
+  box.innerHTML = '';
+  $('#histSub').textContent = list.length
+    ? `${list.length} 条记录 · 仅本机` : '本机处理记录';
+
+  if (!list.length){
+    box.innerHTML = `<div style="flex:1;display:flex;flex-direction:column;
+      align-items:center;justify-content:center;gap:10px;color:var(--t3)">
+      <svg width="38" height="38" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="1.3" stroke-linecap="round">
+        <circle cx="12" cy="12" r="8.5"/><path d="M12 7.6V12l2.9 1.9"/>
+      </svg>
+      <div style="font-size:13px">还没有处理记录</div></div>`;
+    foot.style.display = 'none';
+    return;
+  }
+
+  foot.style.display = 'block';
+  list.forEach(h => {
+    const d = document.createElement('div');
+    d.className = 'hit';
+    const t = new Date(h.ts);
+    const time = `${String(t.getHours()).padStart(2,'0')}:${String(t.getMinutes()).padStart(2,'0')}`;
+    d.innerHTML = `
+      <div class="hith"><img src="${h.thumb}" alt=""></div>
+      <div class="hi">
+        <div class="a">${h.name}</div>
+        <div class="b">${h.inW}×${h.inH} → ${h.outW}×${h.outH} ·
+          ×${h.scale} · ${h.model} · ${(h.ms/1000).toFixed(1)}s · ${time}</div>
+      </div>`;
+    d.onclick = () => toast(`${h.model} · ×${h.scale} · 已存于相册`);
+    box.appendChild(d);
+  });
+}
+
+$('#clearHist').onclick = () => {
+  localStorage.removeItem(HKEY);
+  renderHistory();
+  toast('已清空记录');
+};
+
+/* ============================================================
+   对比视图
+   ============================================================ */
+function openCompare(i){
+  const it = state.items[i];
+  if (!it || !it.outUrl) return;
+  state.cmpIndex = i;
+  state.cmpSplit = 50;
+  state.cmpZoom = 1;
+  state.cmpPanX = 0;
+  state.cmpPanY = 0;
+  state.showOrig = false;
+
+  $('#imgA').src = it.url;
+  $('#imgB').src = it.outUrl;
+  $('#cmpInfo').textContent =
+    `${it.w}×${it.h} → ${it.outW}×${it.outH} · ×${state.scale} · ${(it.ms/1000).toFixed(1)}s`;
+  $('#cmpToggle').textContent = '看原图';
+  applySplit();
+  applyZoom();
+  $('#cmp').classList.add('on');
+}
+
+function closeCompare(){
+  $('#cmp').classList.remove('on');
+  state.cmpIndex = -1;
+}
+
+$('#cmpClose').onclick = closeCompare;
+$('#cmpToggle').onclick = () => {
+  state.showOrig = !state.showOrig;
+  $('#cmpToggle').textContent = state.showOrig ? '看结果' : '看原图';
+  applySplit();
+};
+
+$('#cmpSave').onclick = () => {
+  const it = state.items[state.cmpIndex];
+  if (!it) return;
+  const a = document.createElement('a');
+  a.href = it.outUrl;
+  a.download = `SuperRes_${MODELS[state.model].id}_${state.scale}x_${it.name}.jpg`;
+  a.click();
+  toast('已保存');
+};
+
+function applySplit(){
+  const p = state.showOrig ? 100 : state.cmpSplit;
+  $('#cLine').style.left = p + '%';
+  $('#cHdl').style.left = p + '%';
+  $('#clip').style.clipPath = `inset(0 ${100 - p}% 0 0)`;
+}
+
+function applyZoom(){
+  const pair = $('#pair');
+  pair.style.transform =
+    `translate(${state.cmpPanX}px, ${state.cmpPanY}px) scale(${state.cmpZoom})`;
+}
+
+/* 手势：单指拖分割线，双指缩放，双击复位 */
+const body = $('#cmpBody');
+let g = {
+  oneFinger: false,
+  pinch: false,
+  startDist: 0,
+  startZoom: 1,
+  lastX: 0, lastY: 0,
+  lastTap: 0,
+  lpTimer: null,
+};
+
+function getSplit(e){
+  const r = body.getBoundingClientRect();
+  const cx = e.touches ? e.touches[0].clientX : e.clientX;
+  return Math.max(3, Math.min(97, (cx - r.left) / r.width * 100));
+}
+
+body.addEventListener('pointerdown', e => {
+  body.setPointerCapture(e.pointerId);
+  if (e.pointerType === 'touch'){ /* 由 touch 事件处理 */ }
+  g.oneFinger = true;
+  state.cmpSplit = getSplit(e);
+
+  // 长按看原图
+  g.lpTimer = setTimeout(() => {
+    if (g.oneFinger && !g.pinch){
+      state.showOrig = true;
+      applySplit();
+      $('#cmpToggle').textContent = '看结果';
+    }
+  }, 420);
+});
+
+body.addEventListener('pointermove', e => {
+  if (!g.oneFinger || g.pinch) return;
+  if (state.showOrig) return;
+  state.cmpSplit = getSplit(e);
+  applySplit();
+  clearTimeout(g.lpTimer);
+});
+
+body.addEventListener('pointerup', e => {
+  clearTimeout(g.lpTimer);
+  g.oneFinger = false;
+  if (state.showOrig){
+    state.showOrig = false;
+    applySplit();
+    $('#cmpToggle').textContent = '看原图';
+  }
+  // 双击复位
+  const now = Date.now();
+  if (now - g.lastTap < 280){
+    state.cmpZoom = state.cmpZoom > 1.05 ? 1 : 2;
+    state.cmpPanX = 0; state.cmpPanY = 0;
+    applyZoom();
+  }
+  g.lastTap = now;
+});
+
+body.addEventListener('pointercancel', () => {
+  clearTimeout(g.lpTimer);
+  g.oneFinger = false;
+});
+
+/* 双指缩放 */
+body.addEventListener('touchstart', e => {
+  if (e.touches.length === 2){
+    g.pinch = true;
+    g.oneFinger = false;
+    clearTimeout(g.lpTimer);
+    const [a, b] = e.touches;
+    g.startDist = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+    g.startZoom = state.cmpZoom;
+    state.cmpSplit = 50; // 双指时不显示分割动画干扰
+    applySplit();
+  }
+}, { passive: true });
+
+body.addEventListener('touchmove', e => {
+  if (e.touches.length === 2 && g.pinch){
+    const [a, b] = e.touches;
+    const d = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+    state.cmpZoom = Math.max(1, Math.min(4, g.startZoom * d / g.startDist));
+    applyZoom();
+  }
+}, { passive: true });
+
+body.addEventListener('touchend', e => {
+  if (e.touches.length < 2) g.pinch = false;
+}, { passive: true });
+
+/* ============================================================
+   Tab 切换
+   ============================================================ */
+const PAGES = ['pg-super', 'pg-hist', 'pg-set'];
+let curPage = 'pg-super';
+
+$$('.tab').forEach(t => {
+  t.onclick = () => {
+    const target = t.dataset.p;
+    if (target === curPage) return;
+
+    const dir = PAGES.indexOf(target) > PAGES.indexOf(curPage) ? 1 : -1;
+    $$('.tab').forEach(x => x.classList.toggle('on', x === t));
+
+    const oldP = document.getElementById(curPage);
+    const newP = document.getElementById(target);
+
+    newP.classList.remove('lf', 'rt', 'act');
+    newP.style.transition = 'none';
+    newP.style.transform = `translateX(${dir * 22}%) scale(.94)`;
+    newP.style.opacity = '0';
+    void newP.offsetWidth;
+    newP.style.transition = '';
+
+    oldP.classList.remove('act');
+    oldP.classList.add(dir > 0 ? 'lf' : 'rt');
+    newP.classList.add('act');
+    curPage = target;
+
+    if (target === 'pg-hist') renderHistory();
+  };
+});
+
+/* ============================================================
+   设置开关
+   ============================================================ */
+$$('.sw').forEach(s => {
+  s.onclick = () => {
+    s.classList.toggle('on');
+    const on = s.classList.contains('on');
+    const k = s.dataset.k;
+    if (k === 'luma') state.luma = on;
+    if (k === 'int8') {
+      state.int8 = on;
+      toast(on ? '加速档需 int8 模型，缺失自动回退' : '已关闭加速档');
+    }
+    if (k === 'keep') state.keep = on;
+    if (k) state.items.forEach(it => { if (k !== 'keep') it.outUrl = null; });
+    if (k && k !== 'keep'){ renderGrid(); updateCta(); }
+  };
+});
+
+/* 设置项点击（线程/分块/质量循环切换） */
+$('#vThreads').parentElement.onclick = () => {
+  const opts = [4, 5, 6, 7, 8];
+  state.threads = opts[(opts.indexOf(state.threads) + 1) % opts.length];
+  $('#vThreads').textContent = state.threads;
+  toast('线程数 ' + state.threads);
+};
+$('#vTile').parentElement.onclick = () => {
+  const opts = [128, 192, 256, 384];
+  state.tile = opts[(opts.indexOf(state.tile) + 1) % opts.length];
+  $('#vTile').textContent = state.tile + ' px';
+  toast('分块 ' + state.tile + 'px');
+};
+$('#vQuality').parentElement.onclick = () => {
+  const opts = [85, 90, 95, 100];
+  state.quality = opts[(opts.indexOf(state.quality) + 1) % opts.length];
+  $('#vQuality').textContent = state.quality + '%';
+  toast('输出质量 ' + state.quality + '%');
+};
+
+/* ============================================================
+   初始化
+   ============================================================ */
+renderModels();
+renderHistory();
+renderGrid();
+updateCta();
+
+// 空状态提示
+setTimeout(() => {
+  if (!state.items.length){
+    console.log('%c提示：点击空状态可打开文件选择；长按 0.7 秒添加示例图',
+      'color:#9B7BFF');
+  }
+}, 600);
+</script>
+</body>
+</html>

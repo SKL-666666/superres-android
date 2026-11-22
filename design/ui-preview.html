@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>SuperRes · UI 原型</title>
+<style>
+:root{
+  --bg:#000;
+  --card:#0E0E10;
+  --card-hi:#16161A;
+  --line:rgba(255,255,255,.08);
+  --line-hi:rgba(255,255,255,.16);
+  --t1:#FFF;
+  --t2:rgba(235,235,245,.60);
+  --t3:rgba(235,235,245,.35);
+  --accent:#9B7BFF;
+  --accent-2:#6E9BFF;
+  --glow:rgba(155,123,255,.45);
+  --ease:cubic-bezier(.32,.72,0,1);
+  --spring:cubic-bezier(.34,1.4,.64,1);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{
+  background:#050505;
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Helvetica Neue",sans-serif;
+  display:flex;align-items:center;justify-content:center;
+  min-height:100vh;padding:40px 20px;
+  gap:48px;flex-wrap:wrap;
+}
+
+/* ===== 手机外壳 ===== */
+.phone{
+  width:393px;height:852px;
+  background:var(--bg);
+  border-radius:54px;
+  position:relative;overflow:hidden;
+  box-shadow:0 0 0 11px #1a1a1c, 0 0 0 12px #2c2c2e, 0 40px 100px -20px rgba(0,0,0,.9);
+  display:flex;flex-direction:column;
+}
+.notch{
+  position:absolute;top:11px;left:50%;transform:translateX(-50%);
+  width:122px;height:35px;background:#000;border-radius:20px;z-index:100;
+}
+.statusbar{
+  height:59px;flex:none;display:flex;align-items:flex-end;justify-content:space-between;
+  padding:0 30px 6px;color:#fff;font-size:15px;font-weight:600;letter-spacing:.2px;z-index:50;
+}
+.statusbar .right{display:flex;gap:6px;align-items:center}
+.bars{display:flex;gap:2px;align-items:flex-end;height:11px}
+.bars i{width:3px;background:#fff;border-radius:1px;display:block}
+.bars i:nth-child(1){height:4px}.bars i:nth-child(2){height:6px}
+.bars i:nth-child(3){height:8px}.bars i:nth-child(4){height:11px}
+.batt{width:24px;height:11px;border:1.2px solid rgba(255,255,255,.55);border-radius:3px;position:relative}
+.batt::after{content:'';position:absolute;right:-3.5px;top:3px;width:2px;height:5px;background:rgba(255,255,255,.55);border-radius:0 1px 1px 0}
+.batt i{position:absolute;inset:1.5px;width:70%;background:#fff;border-radius:1.5px;display:block}
+
+/* ===== 页面容器 ===== */
+.viewport{flex:1;position:relative;overflow:hidden}
+.page{
+  position:absolute;inset:0;display:flex;flex-direction:column;
+  padding:0 20px;
+  transition:transform .5s var(--ease), opacity .35s var(--ease);
+  will-change:transform;
+}
+.page.out-left{transform:translateX(-24%) scale(.94);opacity:0;pointer-events:none}
+.page.out-right{transform:translateX(24%) scale(.94);opacity:0;pointer-events:none}
+.page.active{transform:none;opacity:1}
+
+/* ===== 大标题 ===== */
+.header{padding:8px 0 18px;flex:none}
+.h1{font-size:34px;font-weight:700;letter-spacing:-.6px;color:var(--t1);line-height:1.1}
+.h1 .sub{display:block;font-size:14px;font-weight:400;letter-spacing:0;
+  color:var(--t2);margin-top:7px}
+
+/* ===== 模型选择 ===== */
+.sec-label{font-size:11px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;
+  color:var(--t3);margin-bottom:10px}
+.models{display:flex;gap:10px;flex:none;overflow-x:auto;padding:2px 0 4px;
+  scrollbar-width:none}
+.models::-webkit-scrollbar{display:none}
+.model{
+  flex:none;min-width:104px;padding:13px 14px;border-radius:18px;
+  background:var(--card);border:1px solid var(--line);
+  transition:all .32s var(--spring);cursor:pointer;position:relative;
+  overflow:hidden;
+}
+.model::before{
+  content:'';position:absolute;inset:0;border-radius:18px;
+  background:radial-gradient(circle at 50% 0%,var(--glow),transparent 70%);
+  opacity:0;transition:opacity .35s var(--ease);
+}
+.model.on{
+  background:var(--card-hi);border-color:var(--accent);
+  box-shadow:0 0 0 1px var(--accent), 0 6px 28px -6px var(--glow),
+             inset 0 1px 0 rgba(255,255,255,.08);
+  transform:scale(1.02);
+}
+.model.on::before{opacity:.5}
+.model .n{font-size:14px;font-weight:600;color:var(--t2);position:relative;
+  transition:color .3s var(--ease);white-space:nowrap}
+.model.on .n{color:#fff}
+.model .m{font-size:9.5px;color:var(--t3);margin-top:4px;position:relative;
+  letter-spacing:.3px}
+.model.on .m{color:rgba(255,255,255,.55)}
+
+/* ===== 倍率分段 ===== */
+.row{display:flex;align-items:center;justify-content:space-between;flex:none}
+.seg{
+  display:flex;background:rgba(118,118,128,.18);border-radius:11px;
+  padding:2px;position:relative;
+}
+.seg .thumb{
+  position:absolute;top:2px;bottom:2px;width:calc(50% - 2px);
+  background:#636366;border-radius:9px;
+  transition:transform .32s var(--spring), background .3s;
+  box-shadow:0 2px 6px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.14);
+}
+.seg[data-v="4"] .thumb{transform:translateX(100%);background:var(--accent)}
+.seg button{
+  position:relative;z-index:2;border:0;background:none;color:var(--t2);
+  font-size:13px;font-weight:600;padding:7px 22px;cursor:pointer;
+  transition:color .3s var(--ease);font-family:inherit;
+}
+.seg button.on{color:#fff}
+
+/* ===== 图片区 ===== */
+.stage{
+  flex:1;margin-top:16px;display:flex;flex-direction:column;min-height:0;
+}
+.empty{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  border:1.5px dashed rgba(255,255,255,.13);border-radius:22px;
+  background:radial-gradient(ellipse at 50% 100%,rgba(155,123,255,.07),transparent 65%);
+  cursor:pointer;transition:all .3s var(--ease);position:relative;overflow:hidden;
+}
+.empty:active{transform:scale(.985);border-color:rgba(155,123,255,.4)}
+.empty .ic{width:44px;height:44px;color:var(--accent);opacity:.9;
+  filter:drop-shadow(0 0 12px var(--glow));transition:transform .4s var(--spring)}
+.empty:active .ic{transform:scale(1.12)}
+.empty .t{margin-top:14px;font-size:15px;color:var(--t2);font-weight:500}
+.empty .s{margin-top:5px;font-size:12px;color:var(--t3)}
+
+/* 网格：无论几张都保持格位，不拉伸 */
+.grid{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:9px;
+  align-content:start;
+}
+.cell{
+  aspect-ratio:1;border-radius:14px;overflow:hidden;position:relative;
+  background:#121214;cursor:pointer;
+  animation:pop .45s var(--spring) backwards;
+  box-shadow:0 0 0 1px rgba(255,255,255,.06);
+}
+@keyframes pop{from{opacity:0;transform:scale(.86)}to{opacity:1;transform:scale(1)}}
+.cell .img{width:100%;height:100%;object-fit:cover;display:block}
+.cell .idx{
+  position:absolute;left:6px;top:6px;min-width:17px;height:17px;
+  background:rgba(0,0,0,.65);backdrop-filter:blur(8px);
+  border-radius:9px;font-size:9.5px;font-weight:600;color:#fff;
+  display:flex;align-items:center;justify-content:center;padding:0 4px;
+}
+.cell .del{
+  position:absolute;right:5px;top:5px;width:20px;height:20px;
+  background:rgba(0,0,0,.6);backdrop-filter:blur(8px);border-radius:50%;
+  display:flex;align-items:center;justify-content:center;color:#fff;
+}
+.cell .del svg{width:9px;height:9px}
+.cell.done::after{
+  content:'';position:absolute;inset:0;border-radius:14px;
+  border:1.5px solid rgba(155,123,255,.7);
+  box-shadow:inset 0 0 14px rgba(155,123,255,.25);
+  pointer-events:none;
+}
+
+/* ===== 主按钮 ===== */
+.cta-wrap{flex:none;padding:16px 0 8px}
+.cta{
+  width:100%;height:54px;border:0;border-radius:16px;
+  background:linear-gradient(180deg,#A78BFF,#8464F0);
+  color:#fff;font-size:16.5px;font-weight:600;font-family:inherit;
+  cursor:pointer;position:relative;overflow:hidden;
+  box-shadow:0 1px 0 rgba(255,255,255,.25) inset,
+             0 8px 26px -8px rgba(132,100,240,.9);
+  transition:transform .2s var(--spring), box-shadow .3s;
+  letter-spacing:.2px;
+}
+.cta::after{
+  content:'';position:absolute;top:0;left:-100%;width:60%;height:100%;
+  background:linear-gradient(100deg,transparent,rgba(255,255,255,.28),transparent);
+  animation:shine 4.5s ease-in-out infinite;
+}
+@keyframes shine{0%,82%{left:-100%}100%{left:160%}}
+.cta:active{transform:scale(.968);box-shadow:0 1px 0 rgba(255,255,255,.25) inset,
+  0 4px 14px -8px rgba(132,100,240,.9)}
+.cta:disabled{
+  background:linear-gradient(180deg,#252528,#1D1D20);
+  color:var(--t3);box-shadow:none;cursor:not-allowed;
+}
+.cta:disabled::after{display:none}
+
+/* ===== 底部 Tab ===== */
+.tabbar{
+  flex:none;height:78px;display:flex;padding:0 12px 24px;
+  background:rgba(10,10,11,.82);backdrop-filter:blur(30px) saturate(160%);
+  border-top:.5px solid rgba(255,255,255,.09);
+  position:relative;z-index:30;
+}
+.tab{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:4px;border:0;background:none;cursor:pointer;font-family:inherit;
+  padding-top:6px;position:relative;
+  transition:transform .22s var(--spring);
+}
+.tab:active{transform:scale(.88)}
+.tab svg{
+  width:23px;height:23px;stroke:var(--t3);stroke-width:1.7;fill:none;
+  transition:stroke .3s var(--ease), filter .35s var(--ease);
+  stroke-linecap:round;stroke-linejoin:round;
+}
+.tab span{
+  font-size:9.5px;font-weight:500;color:var(--t3);letter-spacing:.1px;
+  transition:color .3s var(--ease);
+}
+.tab.on svg{
+  stroke:var(--accent);
+  filter:drop-shadow(0 0 7px var(--glow));
+}
+.tab.on span{color:var(--accent);font-weight:600}
+.home{
+  position:absolute;bottom:8px;left:50%;transform:translateX(-50%);
+  width:134px;height:5px;background:rgba(255,255,255,.55);border-radius:3px;z-index:40;
+}
+
+/* ===== 处理遮罩 ===== */
+.overlay{
+  position:absolute;inset:0;z-index:90;display:flex;align-items:center;justify-content:center;
+  background:rgba(0,0,0,.55);
+  backdrop-filter:blur(22px) saturate(140%);
+  -webkit-backdrop-filter:blur(22px) saturate(140%);
+  opacity:0;pointer-events:none;transition:opacity .3s var(--ease);
+}
+.overlay.on{opacity:1;pointer-events:auto}
+.ov-card{
+  width:236px;padding:28px 24px 22px;border-radius:26px;
+  background:rgba(22,22,26,.72);
+  border:.5px solid rgba(255,255,255,.12);
+  box-shadow:0 30px 70px -20px rgba(0,0,0,.9), inset 0 1px 0 rgba(255,255,255,.07);
+  display:flex;flex-direction:column;align-items:center;
+  transform:scale(.88);opacity:0;
+  transition:transform .48s var(--spring), opacity .3s;
+}
+.overlay.on .ov-card{transform:scale(1);opacity:1}
+.ring{width:72px;height:72px;position:relative}
+.ring svg{width:72px;height:72px;transform:rotate(-90deg)}
+.ring .trk{fill:none;stroke:rgba(255,255,255,.1);stroke-width:5}
+.ring .bar{
+  fill:none;stroke:url(#g1);stroke-width:5;stroke-linecap:round;
+  stroke-dasharray:201;stroke-dashoffset:201;
+  transition:stroke-dashoffset .5s var(--ease);
+  filter:drop-shadow(0 0 6px var(--glow));
+}
+.ring .pct{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-size:17px;font-weight:600;color:#fff;letter-spacing:-.3px;
+}
+.ov-t{margin-top:18px;font-size:13px;color:var(--t2);text-align:center;
+  animation:breathe 2s ease-in-out infinite}
+@keyframes breathe{0%,100%{opacity:.55}50%{opacity:1}}
+.ov-b{
+  margin-top:16px;width:100%;height:40px;border-radius:12px;border:0;
+  background:rgba(255,255,255,.09);color:#fff;font-size:13.5px;
+  font-weight:500;font-family:inherit;cursor:pointer;
+  transition:background .2s;
+}
+.ov-b:active{background:rgba(255,255,255,.15)}
+
+/* ===== 历史页 ===== */
+.hist-item{
+  display:flex;gap:14px;align-items:center;padding:12px 0;
+  border-bottom:.5px solid var(--line);cursor:pointer;
+  transition:opacity .2s;
+}
+.hist-item:active{opacity:.6}
+.hist-thumb{
+  width:54px;height:54px;border-radius:12px;overflow:hidden;flex:none;
+  background:#161618;box-shadow:0 0 0 1px rgba(255,255,255,.07);
+}
+.hist-thumb img{width:100%;height:100%;object-fit:cover}
+.hist-info{flex:1;min-width:0}
+.hist-info .a{font-size:14px;color:#fff;font-weight:500;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hist-info .b{font-size:11.5px;color:var(--t3);margin-top:3px;
+  font-variant-numeric:tabular-nums}
+
+/* ===== 设置页 ===== */
+.group{
+  background:var(--card);border-radius:16px;overflow:hidden;margin-bottom:18px;
+  border:.5px solid var(--line);
+}
+.g-item{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 16px;border-bottom:.5px solid var(--line);
+  font-size:15px;color:#fff;
+}
+.g-item:last-child{border-bottom:0}
+.g-item .lbl{display:flex;align-items:center;gap:12px}
+.g-item .ico{
+  width:28px;height:28px;border-radius:7px;display:flex;
+  align-items:center;justify-content:center;flex:none;
+}
+.g-item .ico svg{width:15px;height:15px;stroke:#fff;stroke-width:1.9;fill:none;
+  stroke-linecap:round;stroke-linejoin:round}
+.g-item .val{font-size:14px;color:var(--t3);font-variant-numeric:tabular-nums}
+.g-item .chev{color:var(--t3);font-size:13px}
+
+/* 自定义开关（非原生 checkbox） */
+.sw{
+  width:47px;height:28px;border-radius:14px;background:#39393D;
+  position:relative;cursor:pointer;transition:background .32s var(--ease);
+  flex:none;
+}
+.sw i{
+  position:absolute;top:2.5px;left:2.5px;width:23px;height:23px;
+  background:#fff;border-radius:50%;
+  box-shadow:0 2px 5px rgba(0,0,0,.35);
+  transition:transform .32s var(--spring);
+}
+.sw.on{background:var(--accent);box-shadow:0 0 12px -2px var(--glow)}
+.sw.on i{transform:translateX(19px)}
+
+/* ===== 对比视图 ===== */
+.cmp{
+  position:absolute;inset:0;background:#000;z-index:80;
+  display:flex;flex-direction:column;
+  opacity:0;pointer-events:none;transition:opacity .3s;
+}
+.cmp.on{opacity:1;pointer-events:auto}
+.cmp-top{
+  flex:none;height:52px;display:flex;align-items:center;justify-content:space-between;
+  padding:0 18px;color:#fff;font-size:15px;font-weight:600;z-index:3;
+}
+.cmp-top button{
+  border:0;background:rgba(255,255,255,.1);color:#fff;width:30px;height:30px;
+  border-radius:50%;cursor:pointer;font-size:16px;font-family:inherit;
+}
+.cmp-body{flex:1;position:relative;overflow:hidden;display:flex;
+  align-items:center;justify-content:center}
+.cmp-pair{position:relative;width:100%;height:100%}
+.cmp-pair img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+.cmp-clip{position:absolute;inset:0;clip-path:inset(0 50% 0 0);}
+.cmp-line{
+  position:absolute;top:0;bottom:0;left:50%;width:2px;
+  background:rgba(255,255,255,.9);z-index:5;
+  box-shadow:0 0 14px rgba(0,0,0,.9);
+}
+.cmp-handle{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:44px;height:44px;border-radius:50%;
+  background:rgba(255,255,255,.95);
+  box-shadow:0 4px 16px rgba(0,0,0,.5);
+  display:flex;align-items:center;justify-content:center;gap:3px;
+}
+.cmp-handle i{width:2px;height:13px;background:#222;border-radius:1px}
+.cmp-tag{
+  position:absolute;top:14px;font-size:11px;font-weight:600;color:#fff;
+  background:rgba(0,0,0,.55);backdrop-filter:blur(10px);
+  padding:4px 10px;border-radius:8px;z-index:4;
+}
+
+/* 图例 */
+.legend{
+  width:340px;color:#888;font-size:13px;line-height:1.75;
+}
+.legend h3{color:#fff;font-size:15px;margin:0 0 12px;font-weight:600}
+.legend b{color:#B9AEFF;font-weight:500}
+.legend p{margin:0 0 8px}
+.legend .k{
+  display:inline-block;background:#141416;border:1px solid #2a2a2e;
+  border-radius:5px;padding:1px 6px;font-size:11.5px;color:#9b9b9f;
+  margin:0 2px;font-family:ui-monospace,monospace;
+}
+</style>
+</head>
+<body>
+
+<div class="phone">
+  <div class="notch"></div>
+  <div class="statusbar">
+    <div>12:33</div>
+    <div class="right">
+      <div class="bars"><i></i><i></i><i></i><i></i></div>
+      <svg width="16" height="12" viewBox="0 0 16 12" style="margin:0 2px">
+        <path d="M8 10.5 L10 8.4 A3 3 0 0 0 6 8.4 Z" fill="#fff"/>
+        <path d="M11.6 6.6 A5 5 0 0 0 4.4 6.6" stroke="#fff" stroke-width="1.3" fill="none" stroke-linecap="round" opacity=".9"/>
+        <path d="M13.8 4.4 A8 8 0 0 0 2.2 4.4" stroke="#fff" stroke-width="1.3" fill="none" stroke-linecap="round" opacity=".6"/>
+      </svg>
+      <div class="batt"><i></i></div>
+    </div>
+  </div>
+
+  <div class="viewport">
+
+    <!-- ========== 页面 1：超分 ========== -->
+    <div class="page active" id="p-super">
+      <div class="header">
+        <div class="h1">画质增强<span class="sub">本地推理 · 不上传</span></div>
+      </div>
+
+      <div class="sec-label">模型</div>
+      <div class="models">
+        <div class="model on" data-i="0">
+          <div class="n">AnimeVideo</div>
+          <div class="m">0.62M · 最快</div>
+        </div>
+        <div class="model" data-i="1">
+          <div class="n">Real-ESRGAN</div>
+          <div class="m">1.2M · 更锐</div>
+        </div>
+        <div class="model" data-i="2">
+          <div class="n">WDN</div>
+          <div class="m">1.2M · 低噪</div>
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:20px">
+        <div class="sec-label" style="margin:0">倍率</div>
+        <div class="seg" id="seg" data-v="2">
+          <div class="thumb"></div>
+          <button class="on" data-s="2">×2</button>
+          <button data-s="4">×4</button>
+        </div>
+      </div>
+
+      <div class="stage" id="stage">
+        <div class="empty" id="empty" onclick="addDemo()">
+          <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="4"/>
+            <circle cx="8.5" cy="8.5" r="1.6"/>
+            <path d="M21 15l-4.5-4.5L7 20"/>
+          </svg>
+          <div class="t">选择图片</div>
+          <div class="s">最多 9 张 · 支持分享进入</div>
+        </div>
+        <div class="grid" id="grid" style="display:none"></div>
+      </div>
+
+      <div class="cta-wrap">
+        <button class="cta" id="cta" disabled onclick="runProgress()">开始增强</button>
+      </div>
+    </div>
+
+    <!-- ========== 页面 2：历史 ========== -->
+    <div class="page out-right" id="p-history">
+      <div class="header">
+        <div class="h1">历史<span class="sub">本机处理记录</span></div>
+      </div>
+      <div class="stage" style="overflow-y:auto;margin-top:0">
+        <div class="hist-item">
+          <div class="hist-thumb"><div style="width:100%;height:100%;background:
+            linear-gradient(140deg,#2c3e66,#8e6bb8 70%,#d9a05b)"></div></div>
+          <div class="hist-info">
+            <div class="a">街景 · 三联</div>
+            <div class="b">1146×1146 → 4584×4584 · ×4 · 12.4s</div>
+          </div>
+        </div>
+        <div class="hist-item">
+          <div class="hist-thumb"><div style="width:100%;height:100%;background:
+            linear-gradient(140deg,#1a3a2a,#4f8f6b 60%,#d7e8a0)"></div></div>
+          <div class="hist-info">
+            <div class="a">山径</div>
+            <div class="b">1621×1095 → 3242×2190 · ×2 · 4.8s</div>
+          </div>
+        </div>
+        <div class="hist-item">
+          <div class="hist-thumb"><div style="width:100%;height:100%;background:
+            linear-gradient(140deg,#3a2030,#a04f5f 65%,#f0c0a0)"></div></div>
+          <div class="hist-info">
+            <div class="a">夜街霓虹</div>
+            <div class="b">1712×1110 → 3424×2220 · ×2 · 5.2s</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== 页面 3：设置 ========== -->
+    <div class="page out-right" id="p-set">
+      <div class="header">
+        <div class="h1">设置<span class="sub">推理与外观</span></div>
+      </div>
+      <div class="stage" style="overflow-y:auto;margin-top:0">
+
+        <div class="group">
+          <div class="g-item">
+            <div class="lbl">
+              <div class="ico" style="background:#5E5CE6">
+                <svg viewBox="0 0 24 24"><path d="M12 3v18M3 12h18"/></svg>
+              </div>
+              <span>仅亮度通道</span>
+            </div>
+            <div class="sw on" onclick="this.classList.toggle('on')"><i></i></div>
+          </div>
+          <div class="g-item">
+            <div class="lbl">
+              <div class="ico" style="background:#30D158">
+                <svg viewBox="0 0 24 24"><path d="M13 2L4.5 13.5H11l-1 8.5L19.5 10H13z"/></svg>
+              </div>
+              <span>加速档 int8</span>
+            </div>
+            <div class="sw" onclick="this.classList.toggle('on')"><i></i></div>
+          </div>
+        </div>
+
+        <div class="group">
+          <div class="g-item">
+            <div class="lbl">
+              <div class="ico" style="background:#FF9F0A">
+                <svg viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/></svg>
+              </div>
+              <span>推理线程</span>
+            </div>
+            <div class="val">6</div>
+          </div>
+          <div class="g-item">
+            <div class="lbl">
+              <div class="ico" style="background:#64D2FF">
+                <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/>
+                <rect x="14" y="3" width="7" height="7" rx="1.5"/>
+                <rect x="3" y="14" width="7" height="7" rx="1.5"/>
+                <rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+              </div>
+              <span>分块尺寸</span>
+            </div>
+            <div class="val">256 px</div>
+          </div>
+        </div>
+
+        <div class="group">
+          <div class="g-item">
+            <div class="lbl">
+              <div class="ico" style="background:#8E8E93">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/>
+                <path d="M12 11v6M12 7.5v.5"/></svg>
+              </div>
+              <span>关于</span>
+            </div>
+            <div class="val">v4.0 <span class="chev">›</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== 处理遮罩 ========== -->
+    <div class="overlay" id="ov">
+      <div class="ov-card">
+        <div class="ring">
+          <svg viewBox="0 0 72 72">
+            <defs>
+              <linearGradient id="g1" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#A78BFF"/>
+                <stop offset="100%" stop-color="#6E9BFF"/>
+              </linearGradient>
+            </defs>
+            <circle class="trk" cx="36" cy="36" r="32"/>
+            <circle class="bar" id="bar" cx="36" cy="36" r="32"/>
+          </svg>
+          <div class="pct" id="pct">0%</div>
+        </div>
+        <div class="ov-t" id="ovt">加载模型…</div>
+        <button class="ov-b" onclick="closeOv()">取消</button>
+      </div>
+    </div>
+
+    <!-- ========== 对比视图 ========== -->
+    <div class="cmp" id="cmp">
+      <div class="cmp-top">
+        <span>对比</span>
+        <button onclick="closeCmp()">✕</button>
+      </div>
+      <div class="cmp-body">
+        <div class="cmp-pair" id="pair">
+          <img id="imgA" alt="">
+          <div class="cmp-clip" id="clip"><img id="imgB" alt=""></div>
+          <div class="cmp-tag" style="left:16px">原图</div>
+          <div class="cmp-tag" style="right:16px">增强后</div>
+          <div class="cmp-line" id="line"></div>
+          <div class="cmp-handle" id="handle"><i></i><i></i></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ========== 底部 Tab ========== -->
+  <div class="tabbar">
+    <button class="tab on" data-p="p-super">
+      <svg viewBox="0 0 24 24">
+        <rect x="3" y="3" width="18" height="18" rx="4"/>
+        <path d="M12 8v8M8 12h8"/>
+      </svg>
+      <span>超分</span>
+    </button>
+    <button class="tab" data-p="p-history">
+      <svg viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="8.5"/>
+        <path d="M12 7.5V12l3 2"/>
+      </svg>
+      <span>历史</span>
+    </button>
+    <button class="tab" data-p="p-set">
+      <svg viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9v.09a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+      </svg>
+      <span>设置</span>
+    </button>
+  </div>
+  <div class="home"></div>
+</div>
+
+<div class="legend">
+  <h3>可交互原型</h3>
+  <p><b>Tab</b> 三个都能点，页面右滑入 / 左滑出</p>
+  <p><b>空状态</b> 点一下加 2 张演示图，再点加满 9 张</p>
+  <p><b>网格</b> 无论 1/2/3 张都保持方格，不拉伸</p>
+  <p><b>开始增强</b> 跑进度环，完成后点格子看对比</p>
+  <p><b>对比</b> 拖动分割线，左右两侧尺寸同步</p>
+  <p><b>设置</b> 自定义开关，非原生 CheckBox</p>
+  <p style="margin-top:14px;color:#666;font-size:12px">
+    曲线 <span class="k">cubic-bezier(.32,.72,0,1)</span> 用于转场<br>
+    弹簧 <span class="k">cubic-bezier(.34,1.4,.64,1)</span> 用于回弹
+  </p>
+</div>
+
+<script>
+/* ===== 生成演示图（渐变 + 噪点，模拟照片） ===== */
+const PAIRS = [
+  ['#2c3e66','#8e6bb8','#d9a05b'],
+  ['#1a3a2a','#4f8f6b','#d7e8a0'],
+  ['#3a2030','#a04f5f','#f0c0a0'],
+  ['#1b2b3a','#4a7fa8','#c8d8e8'],
+  ['#2f2418','#8a6a3a','#e8d0a0'],
+  ['#241a2f','#6a4a8a','#c8a0e8'],
+  ['#2a2a2a','#5a5a5a','#b0b0b0'],
+  ['#3a1a1a','#8a3a3a','#e8a0a0'],
+  ['#1a2a2a','#3a7a7a','#a0e0e0'],
+  ['#2a1a3a','#7a4aaa','#d0a0f0']
+];
+function makeImg(i, w = 300){
+  const p = PAIRS[i % PAIRS.length];
+  const c = document.createElement('canvas');
+  c.width = c.height = w;
+  const x = c.getContext('2d');
+  const g = x.createLinearGradient(0,0,w,w);
+  g.addColorStop(0, p[0]); g.addColorStop(.55, p[1]); g.addColorStop(1, p[2]);
+  x.fillStyle = g; x.fillRect(0,0,w,w);
+  // 纹理
+  for (let k = 0; k < 900; k++){
+    x.fillStyle = `rgba(255,255,255,${Math.random()*.055})`;
+    x.fillRect(Math.random()*w, Math.random()*w, Math.random()*2.5, Math.random()*2.5);
+  }
+  // 结构线条（模拟建筑/窗格）
+  x.strokeStyle = 'rgba(0,0,0,.16)'; x.lineWidth = 1.6;
+  for (let k = 0; k < 7; k++){
+    const yy = w*(.12 + k*.115);
+    x.beginPath(); x.moveTo(0, yy); x.lineTo(w, yy + (Math.random()-.5)*14); x.stroke();
+  }
+  return c.toDataURL();
+}
+
+/* ===== Tab 切换 ===== */
+const pages = ['p-super','p-history','p-set'];
+let cur = 'p-super';
+document.querySelectorAll('.tab').forEach(t => {
+  t.onclick = () => {
+    const target = t.dataset.p;
+    if (target === cur) return;
+    const order = pages.indexOf(target) - pages.indexOf(cur);
+    const dir = order > 0 ? 1 : -1;
+
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('on'));
+    t.classList.add('on');
+
+    const oldP = document.getElementById(cur);
+    const newP = document.getElementById(target);
+
+    newP.classList.remove('out-left','out-right','active');
+    newP.style.transition = 'none';
+    newP.style.transform = `translateX(${dir*24}%) scale(.94)`;
+    newP.style.opacity = 0;
+    void newP.offsetWidth;
+    newP.style.transition = '';
+
+    oldP.classList.remove('active');
+    oldP.classList.add(dir > 0 ? 'out-left' : 'out-right');
+    newP.classList.add('active');
+    cur = target;
+  };
+});
+
+/* ===== 模型选择 ===== */
+document.querySelectorAll('.model').forEach(m => {
+  m.onclick = () => {
+    document.querySelectorAll('.model').forEach(x => x.classList.remove('on'));
+    m.classList.add('on');
+  };
+});
+
+/* ===== 倍率 ===== */
+const seg = document.getElementById('seg');
+seg.querySelectorAll('button').forEach(b => {
+  b.onclick = () => {
+    seg.dataset.v = b.dataset.s;
+    seg.querySelectorAll('button').forEach(x => x.classList.remove('on'));
+    b.classList.add('on');
+  };
+});
+
+/* ===== 加图 ===== */
+let n = 0;
+const grid = document.getElementById('grid');
+const empty = document.getElementById('empty');
+const cta = document.getElementById('cta');
+
+function addDemo(){
+  const add = Math.min(3, 9 - n);
+  for (let k = 0; k < add; k++){
+    const i = n;
+    const cell = document.createElement('div');
+    cell.className = 'cell';
+    cell.style.animationDelay = (k*55) + 'ms';
+    cell.innerHTML = `
+      <img class="img" src="${makeImg(i)}" alt="">
+      <div class="idx">${i+1}</div>
+      <div class="del" onclick="event.stopPropagation();delCell(this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"
+             stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
+      </div>`;
+    cell.onclick = () => openCmp(i);
+    grid.appendChild(cell);
+    n++;
+  }
+  if (n > 0){
+    empty.style.display = 'none';
+    grid.style.display = 'grid';
+    cta.disabled = false;
+    cta.textContent = `开始增强 · ${n} 张`;
+  }
+  if (n >= 9) cta.textContent = '开始增强 · 9 张（已满）';
+}
+
+function delCell(el){
+  el.closest('.cell').remove();
+  n--;
+  [...grid.children].forEach((c, i) => {
+    c.querySelector('.idx').textContent = i + 1;
+    c.onclick = () => openCmp(i);
+  });
+  if (n === 0){
+    empty.style.display = 'flex';
+    grid.style.display = 'none';
+    cta.disabled = true;
+    cta.textContent = '开始增强';
+  } else {
+    cta.textContent = `开始增强 · ${n} 张`;
+  }
+}
+
+/* ===== 进度 ===== */
+const ov = document.getElementById('ov');
+const bar = document.getElementById('bar');
+const pct = document.getElementById('pct');
+const ovt = document.getElementById('ovt');
+let timer = null;
+
+function runProgress(){
+  if (n === 0) return;
+  ov.classList.add('on');
+  ovt.textContent = '加载模型…';
+  let p = 0;
+  bar.style.strokeDashoffset = 201;
+  pct.textContent = '0%';
+  clearInterval(timer);
+  timer = setInterval(() => {
+    p += Math.random() * 6 + 2;
+    if (p >= 100){
+      p = 100;
+      clearInterval(timer);
+      ovt.textContent = '完成';
+      setTimeout(() => {
+        closeOv();
+        [...grid.children].forEach(c => c.classList.add('done'));
+        cta.textContent = `重新处理 · ${n} 张`;
+      }, 420);
+    }
+    bar.style.strokeDashoffset = 201 - (201 * p / 100);
+    pct.textContent = Math.round(p) + '%';
+    if (p > 12 && p < 90) ovt.textContent = '推理中…';
+  }, 110);
+}
+
+function closeOv(){
+  clearInterval(timer);
+  ov.classList.remove('on');
+}
+
+/* ===== 对比视图（尺寸同步问题已修） ===== */
+const cmp = document.getElementById('cmp');
+const imgA = document.getElementById('imgA');
+const imgB = document.getElementById('imgB');
+const clip = document.getElementById('clip');
+const line = document.getElementById('line');
+const handle = document.getElementById('handle');
+const pair = document.getElementById('pair');
+
+function openCmp(i){
+  const src = makeImg(i, 600);
+  imgA.src = src;
+  imgB.src = src;
+  // 模拟"增强后"：轻微提亮+锐化感（用 CSS filter 表现，不改变尺寸）
+  imgB.style.filter = 'contrast(1.12) saturate(1.06) brightness(1.03)';
+  setSplit(50);
+  cmp.classList.add('on');
+}
+function closeCmp(){ cmp.classList.remove('on'); }
+
+function setSplit(p){
+  p = Math.max(4, Math.min(96, p));
+  line.style.left = p + '%';
+  handle.style.left = p + '%';
+  clip.style.clipPath = `inset(0 ${100-p}% 0 0)`;
+}
+
+let dragging = false;
+function pos(e){
+  const r = pair.getBoundingClientRect();
+  const x = (e.touches ? e.touches[0].clientX : e.clientX) - r.left;
+  return x / r.width * 100;
+}
+pair.addEventListener('mousedown', e => { dragging = true; setSplit(pos(e)); });
+pair.addEventListener('mousemove', e => { if (dragging) setSplit(pos(e)); });
+window.addEventListener('mouseup', () => dragging = false);
+pair.addEventListener('touchstart', e => { dragging = true; setSplit(pos(e)); }, {passive:true});
+pair.addEventListener('touchmove', e => { if (dragging) setSplit(pos(e)); }, {passive:true});
+window.addEventListener('touchend', () => dragging = false);
+
+/* 初始化 2 张，展示不拉伸 */
+addDemo();
+</script>
+</body>
+</html>
