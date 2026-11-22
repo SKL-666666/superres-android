@@ -161,15 +161,15 @@ public class CompressFragment extends Fragment {
         qbtns.setPadding(0, Theme.dp(requireContext(), 8), 0, 0);
         int[] qs = {30, 50, 70, 85, 95};
         for (int q : qs) {
-            TextView b = new TextView(requireContext());
-            b.setText(q + "%");
-            b.setTextSize(12);
-            b.setGravity(Gravity.CENTER);
-            b.setPadding(0, Theme.dp(requireContext(), 8), 0, Theme.dp(requireContext(), 8));
+            TextView qb = new TextView(requireContext());
+            qb.setText(q + "%");
+            qb.setTextSize(12);
+            qb.setGravity(Gravity.CENTER);
+            qb.setPadding(0, Theme.dp(requireContext(), 8), 0, Theme.dp(requireContext(), 8));
             GradientDrawable d = new GradientDrawable();
             d.setCornerRadius(Theme.dp(requireContext(), Theme.RADIUS_SMALL));
-            b.setBackground(d);
-            b.setOnClickListener(v -> {
+            qb.setBackground(d);
+            qb.setOnClickListener(v -> {
                 quality = q;
                 compressed = null;
                 render();
@@ -177,7 +177,7 @@ public class CompressFragment extends Fragment {
             LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(0,
                     ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
             p.rightMargin = Theme.dp(requireContext(), 5);
-            qbtns.addView(b, p);
+            qbtns.addView(qb, p);
         }
         root.addView(qbtns);
 

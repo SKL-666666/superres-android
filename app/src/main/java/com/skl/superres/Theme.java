@@ -48,6 +48,43 @@ public final class Theme {
 
     private Theme() {}
 
+    // ==================== 兼容别名 ====================
+    public static final int T1 = TEXT_PRIMARY;
+    public static final int T2 = TEXT_SECONDARY;
+    public static final int T3 = TEXT_TERTIARY;
+    public static final int T4 = 0x337A7A90;
+    public static final int C1 = SURFACE_GLASS;
+    public static final int C2 = SURFACE_GLASS_STRONG;
+    public static final int LINE = BORDER_GLASS;
+    public static final int OK = ACCENT_SUCCESS;
+    public static final int WARN = ACCENT_WARNING;
+    public static final int DANGER = ACCENT_ERROR;
+    public static final int PAGE = BG;
+
+    public static int accent()     { return ACCENT_PRIMARY; }
+    public static int accentHi()   { return 0xFF6B78E8; }
+    public static int accentLo()   { return ACCENT_PRIMARY; }
+    public static int accentSoft() { return ACCENT_SURFACE; }
+
+    /** 主按钮：强调色实心 */
+    public static android.graphics.drawable.Drawable primaryButton(int radiusPx, int h) {
+        android.graphics.drawable.GradientDrawable d =
+                new android.graphics.drawable.GradientDrawable();
+        d.setColor(ACCENT_PRIMARY);
+        d.setCornerRadius(radiusPx);
+        return d;
+    }
+
+    /** 次按钮：玻璃底 + 细描边 */
+    public static android.graphics.drawable.Drawable ghostButton(int radiusPx) {
+        android.graphics.drawable.GradientDrawable d =
+                new android.graphics.drawable.GradientDrawable();
+        d.setColor(SURFACE_GLASS);
+        d.setCornerRadius(radiusPx);
+        d.setStroke(1, BORDER_GLASS);
+        return d;
+    }
+
     /** dp 转 px */
     public static int dp(android.content.Context c, float v) {
         return Math.round(v * c.getResources().getDisplayMetrics().density);
