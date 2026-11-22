@@ -48,10 +48,10 @@ android {
     packagingOptions {
         jniLibs { useLegacyPackaging = false }
     }
+}
 
-    // 寮哄埗婧愮爜鎸?UTF-8 缂栬瘧锛岄伩鍏嶄腑鏂囨敞閲?瀛楃涓蹭贡鐮?    tasks.withType(JavaCompile).configureEach {
-        options.encoding = 'UTF-8'
-    }
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
 }
 
 dependencies {
