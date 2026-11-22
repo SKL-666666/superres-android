@@ -1,8 +1,6 @@
 package com.skl.superres;
 
-import android.animation.ValueAnimator;
-import android.content.Context;
-import android.graphics.Color;
+import android.graphics.Typeface;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ImageView;
@@ -15,94 +13,80 @@ import androidx.fragment.app.Fragment;
 import androidx.viewpager2.adapter.FragmentStateAdapter;
 import androidx.viewpager2.widget.ViewPager2;
 
-import com.skl.superres.frag.HistoryFragment;
-import com.skl.superres.frag.SettingsFragment;
+import com.skl.superres.frag.AboutFragment;
+import com.skl.superres.frag.CameraFragment;
+import com.skl.superres.frag.CompressFragment;
 import com.skl.superres.frag.SuperFragment;
 
 /**
- * 主页：ViewPager2 + 底部 Tab（原生，无 WebView）
+ * 主界面：4 Tab（超分 / 压缩 / 相机 / 关于）
+ * 1:1 对齐鸿蒙版 HdsTabs 结构
  */
 public class MainActivity extends AppCompatActivity {
 
     private ViewPager2 pager;
-    private LinearLayout tabbar;
-    private final ImageView[] icons = new ImageView[3];
-    private final TextView[] labels = new TextView[3];
+    private final ImageView[] icons = new ImageView[4];
+    private final TextView[] labels = new TextView[4];
 
-    private final SuperFragment   fSuper   = new SuperFragment();
-    private final HistoryFragment fHistory = new HistoryFragment();
-    private final SettingsFragment fSettings = new SettingsFragment();
+    private final SuperFragment    fSuper    = new SuperFragment();
+    private final CompressFragment fCompress = new CompressFragment();
+    private final CameraFragment   fCamera   = new CameraFragment();
+    private final AboutFragment    fAbout    = new AboutFragment();
 
     @Override
     protected void onCreate(Bundle b) {
         super.onCreate(b);
-        Theme.init(this);
         setContentView(R.layout.activity_main);
 
-        pager  = findViewById(R.id.pager);
-        tabbar = findViewById(R.id.tabbar);
-
+        pager = findViewById(R.id.pager);
         icons[0]  = findViewById(R.id.ic1);
         icons[1]  = findViewById(R.id.ic2);
         icons[2]  = findViewById(R.id.ic3);
+        icons[3]  = findViewById(R.id.ic4);
         labels[0] = findViewById(R.id.tx1);
         labels[1] = findViewById(R.id.tx2);
         labels[2] = findViewById(R.id.tx3);
+        labels[3] = findViewById(R.id.tx4);
 
         pager.setAdapter(new FragmentStateAdapter(this) {
             @NonNull @Override
             public Fragment createFragment(int pos) {
                 switch (pos) {
-                    case 1:  return fHistory;
-                    case 2:  return fSettings;
+                    case 1:  return fCompress;
+                    case 2:  return fCamera;
+                    case 3:  return fAbout;
                     default: return fSuper;
                 }
             }
-            @Override public int getItemCount() { return 3; }
+            @Override public int getItemCount() { return 4; }
         });
-        pager.setOffscreenPageLimit(2);
+        pager.setOffscreenPageLimit(3);
         pager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
-            @Override public void onPageSelected(int pos) {
-                syncTabs(pos);
-            }
+            @Override public void onPageSelected(int pos) { syncTabs(pos); }
         });
 
-        View[] tabs = {findViewById(R.id.tab1), findViewById(R.id.tab2), findViewById(R.id.tab3)};
-        for (int i = 0; i < 3; i++) {
+        int[] ids = {R.id.tab1, R.id.tab2, R.id.tab3, R.id.tab4};
+        for (int i = 0; i < 4; i++) {
             final int idx = i;
-            tabs[i].setOnClickListener(v -> {
+            findViewById(ids[i]).setOnClickListener(v -> {
                 bounce(v);
                 pager.setCurrentItem(idx, true);
             });
         }
 
-        applyTheme();
         syncTabs(0);
     }
 
-    /** 切页 / 换主题后调用，刷新 Tab 配色 */
-    public void applyTheme() {
-        int ac = Theme.accent();
-        int off = Theme.T3;
-
-        for (int i = 0; i < 3; i++) {
-            boolean on = i == pager.getCurrentItem();
-            icons[i].setColorFilter(on ? ac : off);
-            labels[i].setTextColor(on ? ac : off);
-            labels[i].setTypeface(null, on
-                    ? android.graphics.Typeface.BOLD
-                    : android.graphics.Typeface.NORMAL);
-            // 选中态辉光（用缩放代替阴影，ImageView 不支持 setShadowLayer）
-            icons[i].setScaleX(on ? 1.1f : 1f);
-            icons[i].setScaleY(on ? 1.1f : 1f);
-        }
-        tabbar.setBackgroundColor(0xE6080809);
-    }
-
     private void syncTabs(int pos) {
-        applyTheme();
-        if (pos == 1) fHistory.refresh();
-        if (pos == 2) fSettings.refreshThemeUi();
+        for (int i = 0; i < 4; i++) {
+            boolean on = i == pos;
+            icons[i].setColorFilter(on ? Theme.ACCENT_PRIMARY : Theme.TEXT_TERTIARY);
+            labels[i].setTextColor(on ? Theme.ACCENT_PRIMARY : Theme.TEXT_TERTIARY);
+            labels[i].setTypeface(null, on ? Typeface.BOLD : Typeface.NORMAL);
+            icons[i].setScaleX(on ? 1.08f : 1f);
+            icons[i].setScaleY(on ? 1.08f : 1f);
+        }
+        if (pos == 1) fCompress.refresh();
     }
 
     private void bounce(View v) {
@@ -113,19 +97,7 @@ public class MainActivity extends AppCompatActivity {
                 .start();
     }
 
-    /** 供子页面改完主题后调用 */
-    public void onSkinChanged() {
-        applyTheme();
-        fSuper.refreshThemeUi();
-        fHistory.refresh();
-        fSettings.refreshThemeUi();
-    }
-
     public void goToSuper() {
         pager.setCurrentItem(0, true);
-    }
-
-    private static int withAlpha(int color, int alpha) {
-        return (color & 0x00FFFFFF) | (alpha << 24);
     }
 }

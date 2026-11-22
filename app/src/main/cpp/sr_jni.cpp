@@ -241,12 +241,17 @@ Java_com_skl_superres_SREngine_nativeProcess(JNIEnv* env, jclass,
                             if (sxSrc >= w) sxSrc = w - 1;
                             if (sySrc >= h) sySrc = h - 1;
                             jint sc = src[(size_t)sySrc * w + sxSrc];
-                            float Y  = r0[x];
-                            float Cb = (float)(sc & 0xFF) - 128.0f;
-                            float Cr = (float)((sc >> 16) & 0xFF) - 128.0f;
-                            float R = (Y * 255.0f) + 1.402f * Cr;
-                            float G = (Y * 255.0f) - 0.344136f * Cb - 0.714136f * Cr;
-                            float B = (Y * 255.0f) + 1.772f * Cb;
+                            // 网络输出的亮度（三通道近似相等，取均值更稳）
+                            float Y = (r0[x] + r1[x] + r2[x]) * (1.0f / 3.0f) * 255.0f;
+                            // 正确计算源图色度差（BT.601 正向变换）
+                            float sr = (float)((sc >> 16) & 0xFF);
+                            float sg = (float)((sc >> 8) & 0xFF);
+                            float sb = (float)(sc & 0xFF);
+                            float Cb = -0.168736f * sr - 0.331264f * sg + 0.5f * sb;
+                            float Cr =  0.5f * sr - 0.418688f * sg - 0.081312f * sb;
+                            float R = Y + 1.402f * Cr;
+                            float G = Y - 0.344136f * Cb - 0.714136f * Cr;
+                            float B = Y + 1.772f * Cb;
                             v = (jint)0xFF000000 | (clamp255(R / 255.0f) << 16)
                                                   | (clamp255(G / 255.0f) << 8)
                                                   |  clamp255(B / 255.0f);
@@ -285,9 +290,12 @@ Java_com_skl_superres_SREngine_nativeProcess(JNIEnv* env, jclass,
                             if (sxSrc >= w) sxSrc = w - 1;
                             if (sySrc >= h) sySrc = h - 1;
                             jint sc = src[(size_t)sySrc * w + sxSrc];
-                            float Y  = acc[0] * 255.0f;
-                            float Cb = (float)(sc & 0xFF) - 128.0f;
-                            float Cr = (float)((sc >> 16) & 0xFF) - 128.0f;
+                            float Y = (acc[0] + acc[1] + acc[2]) * (1.0f / 3.0f) * 255.0f;
+                            float sr = (float)((sc >> 16) & 0xFF);
+                            float sg = (float)((sc >> 8) & 0xFF);
+                            float sb = (float)(sc & 0xFF);
+                            float Cb = -0.168736f * sr - 0.331264f * sg + 0.5f * sb;
+                            float Cr =  0.5f * sr - 0.418688f * sg - 0.081312f * sb;
                             float R = Y + 1.402f * Cr;
                             float G = Y - 0.344136f * Cb - 0.714136f * Cr;
                             float B = Y + 1.772f * Cb;

@@ -1,15 +1,10 @@
 package com.skl.superres.frag;
 
-import android.animation.ValueAnimator;
 import android.content.ContentValues;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Paint;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
-import android.graphics.drawable.StateListDrawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -26,6 +21,7 @@ import android.widget.FrameLayout;
 import android.widget.GridLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -33,10 +29,10 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 
 import com.skl.superres.Anim;
-import com.skl.superres.MainActivity;
 import com.skl.superres.R;
 import com.skl.superres.SREngine;
 import com.skl.superres.Theme;
@@ -55,27 +51,25 @@ public class SuperFragment extends Fragment {
 
     private static final int MAX = 9;
 
-    private final List<Uri> picked   = new ArrayList<>();
-    private final List<Bitmap> outs  = new ArrayList<>();
-    private final List<Meta> metas   = new ArrayList<>();
-    private final List<LinearLayout> chipViews = new ArrayList<>();
+    private final List<Uri> picked = new ArrayList<>();
+    private final List<Bitmap> outs = new ArrayList<>();
+    private final List<Meta> metas = new ArrayList<>();
 
     private static final class Meta {
         int inW, inH, outW, outH; long ms; String model;
     }
 
     private SREngine engine;
-    private int modelIdx = 0;
-    private int scale = 2;
     private boolean busy = false;
+    private boolean saved = false;
 
-    private LinearLayout modelRow, emptyBox;
-    private TextView tvDesc, tvPercent, tvProgress;
+    private LinearLayout emptyBox;
+    private TextView tvStatus, tvPercent, tvProgress;
     private GridLayout grid;
+    private ScrollView gridScroll;
     private FrameLayout mask;
     private ProgressRingView ring;
-    private Button btnPick, btnGo, btnSave;
-    private TextView seg2, seg4;
+    private Button btnProcess, btnSaveAll, btnClear, btnCancel;
 
     private final ExecutorService pool = Executors.newSingleThreadExecutor();
     private final Handler ui = new Handler(Looper.getMainLooper());
@@ -88,261 +82,167 @@ public class SuperFragment extends Fragment {
                     if (!picked.contains(u)) picked.add(u);
                 }
                 clearResults();
-                renderGrid();
-                updateCta();
+                render();
             });
 
     @Nullable @Override
-    public View onCreateView(@NonNull LayoutInflater inf, @Nullable ViewGroup c, @Nullable Bundle b) {
+    public View onCreateView(@NonNull LayoutInflater inf, @Nullable ViewGroup c,
+                             @Nullable Bundle b) {
         return inf.inflate(R.layout.frag_super, c, false);
     }
 
     @Override
     public void onViewCreated(@NonNull View v, @Nullable Bundle b) {
         engine = new SREngine(requireContext());
-        modelRow   = v.findViewById(R.id.modelRow);
+
         emptyBox   = v.findViewById(R.id.emptyBox);
-        tvDesc     = v.findViewById(R.id.tvModelDesc);
+        tvStatus   = v.findViewById(R.id.tvStatus);
         tvPercent  = v.findViewById(R.id.tvPercent);
         tvProgress = v.findViewById(R.id.tvProgressInfo);
         grid       = v.findViewById(R.id.grid);
+        gridScroll = v.findViewById(R.id.gridScroll);
         mask       = v.findViewById(R.id.mask);
         ring       = v.findViewById(R.id.ring);
-        btnPick    = v.findViewById(R.id.btnPick);
-        btnGo      = v.findViewById(R.id.btnGo);
-        btnSave    = v.findViewById(R.id.btnSave);
-        seg2       = v.findViewById(R.id.seg2);
-        seg4       = v.findViewById(R.id.seg4);
+        btnProcess = v.findViewById(R.id.btnProcess);
+        btnSaveAll = v.findViewById(R.id.btnSaveAll);
+        btnClear   = v.findViewById(R.id.btnClear);
+        btnCancel  = v.findViewById(R.id.btnCancel);
 
-        buildModels();
-        setupSeg();
-        setupButtons();
-        refreshThemeUi();
-        updateCta();
+        ring.setColor(Theme.ACCENT_PRIMARY);
 
-        // 入场
-        Anim.enterUp(v.findViewById(R.id.hdr), 40);
-        Anim.enterScale(v.findViewById(R.id.cardModel), 180);
-        Anim.enterUp(emptyBox, 280);
-        Anim.enterUp(btnGo, 360);
+        emptyBox.setOnClickListener(x -> picker.launch("image/*"));
+        btnProcess.setOnClickListener(x -> start());
+        btnSaveAll.setOnClickListener(x -> saveAll());
+        btnClear.setOnClickListener(x -> clearAll());
+        btnCancel.setOnClickListener(x -> busy = false);
+        v.findViewById(R.id.btnHelp).setOnClickListener(x -> showHelp());
+
+        Anim.pressFeedback(btnProcess);
+        Anim.pressFeedback(btnSaveAll);
+        Anim.pressFeedback(btnClear);
+
+        render();
     }
 
-    // ================= 模型 =================
-    private void buildModels() {
-        modelRow.removeAllViews();
-        chipViews.clear();
-        SREngine.Model[] ms = SREngine.MODELS;
-        for (int i = 0; i < ms.length; i++) {
-            final int idx = i;
-            SREngine.Model m = ms[i];
+    // ================= 渲染 =================
+    private void render() {
+        boolean empty = picked.isEmpty();
+        emptyBox.setVisibility(empty ? View.VISIBLE : View.GONE);
+        gridScroll.setVisibility(empty ? View.GONE : View.VISIBLE);
+        tvStatus.setVisibility(empty ? View.GONE : View.VISIBLE);
 
-            LinearLayout chip = new LinearLayout(requireContext());
-            chip.setOrientation(LinearLayout.VERTICAL);
-            chip.setGravity(Gravity.START);
-            chip.setPadding(dp(12), dp(11), dp(12), dp(11));
-            chip.setMinimumWidth(dp(104));
+        btnProcess.setText(empty ? "批量增强"
+                : (busy ? "处理中..." : "批量增强 (" + picked.size() + "张)"));
+        btnProcess.setEnabled(!empty && !busy);
+        btnProcess.setAlpha(!empty && !busy ? 1f : 0.45f);
 
-            TextView n = new TextView(requireContext());
-            n.setText(m.name);
-            n.setTextSize(12.5f);
-            n.setTypeface(null, Typeface.BOLD);
+        btnSaveAll.setEnabled(!outs.isEmpty() && !saved);
+        btnSaveAll.setAlpha(!outs.isEmpty() && !saved ? 1f : 0.45f);
+        btnSaveAll.setText(saved ? "已保存至图库" : "全部保存至图库");
 
-            TextView meta = new TextView(requireContext());
-            meta.setText(m.meta);
-            meta.setTextSize(8.5f);
-            meta.setPadding(0, dp(3), 0, 0);
+        btnClear.setEnabled(!empty && !busy);
+        btnClear.setAlpha(!empty && !busy ? 1f : 0.45f);
 
-            chip.addView(n);
-            chip.addView(meta);
-
-            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-            lp.rightMargin = dp(8);
-            chip.setLayoutParams(lp);
-
-            chip.setOnClickListener(x -> {
-                modelIdx = idx;
-                clearResults();
-                buildModels();
-                updateCta();
-                Anim.pressInOut(chip);
-            });
-
-            modelRow.addView(chip);
-            chipViews.add(chip);
+        if (!empty) {
+            tvStatus.setText("已选择 " + picked.size() + " 张 · 已处理 "
+                    + outs.size() + " 张");
         }
-        tvDesc.setText(ms[modelIdx].desc + " · 适合：" + ms[modelIdx].tag);
-    }
 
-    private void styleChips() {
-        SREngine.Model[] ms = SREngine.MODELS;
-        for (int i = 0; i < chipViews.size(); i++) {
-            LinearLayout chip = chipViews.get(i);
-            boolean on = i == modelIdx;
-            GradientDrawable d = new GradientDrawable();
-            d.setCornerRadius(dp(16));
-            d.setColor(on ? Theme.C2 : Theme.C1);
-            d.setStroke(on ? dp(1.2f) : 1, on ? Theme.accent() : Theme.LINE);
-            chip.setBackground(d);
-            chip.setScaleX(on ? 1.015f : 1f);
-            chip.setScaleY(on ? 1.015f : 1f);
-
-            ((TextView) chip.getChildAt(0)).setTextColor(on ? Theme.T1 : Theme.T2);
-            ((TextView) chip.getChildAt(1)).setTextColor(on ? Theme.T2 : Theme.T3);
-        }
-        if (tvDesc != null) {
-            tvDesc.setText(ms[modelIdx].desc + " · 适合：" + ms[modelIdx].tag);
-        }
-    }
-
-    // ================= 倍率 =================
-    private void setupSeg() {
-        seg2.setOnClickListener(v -> setScale(2));
-        seg4.setOnClickListener(v -> setScale(4));
-        setScale(2);
-    }
-
-    private void setScale(int s) {
-        scale = s;
-        applySegStyle();
-        clearResults();
         renderGrid();
-        updateCta();
-    }
-
-    private void applySegStyle() {
-        styleSegBtn(seg2, scale == 2);
-        styleSegBtn(seg4, scale == 4);
-    }
-
-    private void styleSegBtn(TextView tv, boolean on) {
-        GradientDrawable d = new GradientDrawable();
-        d.setCornerRadius(dp(7));
-        d.setColor(on ? Theme.accent() : Color.TRANSPARENT);
-        tv.setBackground(d);
-        tv.setTextColor(on ? Theme.T1 : Theme.T2);
-        tv.setTypeface(null, on ? Typeface.BOLD : Typeface.NORMAL);
-    }
-
-    // ================= 按钮 =================
-    private void setupButtons() {
-        btnPick.setOnClickListener(v -> picker.launch("image/*"));
-        emptyBox.setOnClickListener(v -> picker.launch("image/*"));
-        btnGo.setOnClickListener(v -> start());
-        btnSave.setOnClickListener(v -> saveAll());
-        Anim.pressFeedback(btnGo);
-        Anim.pressFeedback(btnPick);
-        Anim.pressFeedback(btnSave);
-    }
-
-    // ================= 网格 =================
-    private void clearResults() {
-        outs.clear();
-        metas.clear();
     }
 
     private void renderGrid() {
         grid.removeAllViews();
-        boolean empty = picked.isEmpty();
-        emptyBox.setVisibility(empty ? View.VISIBLE : View.GONE);
-        View gs = getView() == null ? null : getView().findViewById(R.id.gridScroll);
-        if (gs != null) gs.setVisibility(empty ? View.GONE : View.VISIBLE);
-        if (empty) return;
+        if (picked.isEmpty()) return;
 
-        int sz = dp(98);
+        int gap = Theme.dp(requireContext(), 6);
         for (int i = 0; i < picked.size(); i++) {
             final int idx = i;
             FrameLayout cell = new FrameLayout(requireContext());
 
             GridLayout.LayoutParams gp = new GridLayout.LayoutParams();
-            gp.width = 0; gp.height = sz; gp.columnSpec = GridLayout.spec(i % 3, 1f);
-            gp.setMargins(dp(3.5f), dp(3.5f), dp(3.5f), dp(3.5f));
+            gp.width = 0;
+            gp.height = Theme.dp(requireContext(), 118);
+            gp.columnSpec = GridLayout.spec(i % 3, 1f);
+            gp.setMargins(gap, gap, gap, gap);
             cell.setLayoutParams(gp);
 
+            // 缩略图
             ImageView iv = new ImageView(requireContext());
             iv.setScaleType(ImageView.ScaleType.CENTER_CROP);
-            iv.setBackgroundColor(Theme.C1);
+            GradientDrawable bg = new GradientDrawable();
+            bg.setCornerRadius(Theme.dp(requireContext(), Theme.RADIUS_THUMB));
+            bg.setColor(Theme.SURFACE_GLASS);
+            iv.setBackground(bg);
+            iv.setClipToOutline(false);
             iv.setImageURI(picked.get(i));
             cell.addView(iv, new FrameLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 
-            // 序号
-            TextView num = new TextView(requireContext());
-            num.setText(String.valueOf(i + 1));
-            num.setTextSize(8.5f);
-            num.setTextColor(Theme.T1);
-            num.setGravity(Gravity.CENTER);
-            GradientDrawable nd = new GradientDrawable();
-            nd.setCornerRadius(dp(8)); nd.setColor(0xAD000000);
-            num.setBackground(nd);
-            FrameLayout.LayoutParams np = new FrameLayout.LayoutParams(dp(16), dp(16));
-            np.gravity = Gravity.TOP | Gravity.START;
-            np.setMargins(dp(5), dp(5), 0, 0);
-            num.setLayoutParams(np);
-            cell.addView(num);
-
-            // 删除
+            // 删除按钮（右上）
             TextView del = new TextView(requireContext());
             del.setText("✕");
-            del.setTextSize(8f);
-            del.setTextColor(Theme.T1);
+            del.setTextSize(9);
+            del.setTextColor(Theme.TEXT_PRIMARY);
             del.setGravity(Gravity.CENTER);
             GradientDrawable dd = new GradientDrawable();
-            dd.setShape(GradientDrawable.OVAL); dd.setColor(0x9E000000);
+            dd.setShape(GradientDrawable.OVAL);
+            dd.setColor(0xB3000000);
             del.setBackground(dd);
-            FrameLayout.LayoutParams dp2 = new FrameLayout.LayoutParams(dp(18), dp(18));
-            dp2.gravity = Gravity.TOP | Gravity.END;
-            dp2.setMargins(0, dp(4), dp(4), 0);
-            del.setLayoutParams(dp2);
+            FrameLayout.LayoutParams dp = new FrameLayout.LayoutParams(
+                    Theme.dp(requireContext(), 20), Theme.dp(requireContext(), 20));
+            dp.gravity = Gravity.TOP | Gravity.END;
+            dp.setMargins(0, Theme.dp(requireContext(), 6), Theme.dp(requireContext(), 6), 0);
+            del.setLayoutParams(dp);
             del.setOnClickListener(x -> {
                 picked.remove(idx);
                 clearResults();
-                renderGrid();
-                updateCta();
+                render();
             });
             cell.addView(del);
 
+            // 状态标签（底部）
+            if (idx < outs.size()) {
+                TextView tag = new TextView(requireContext());
+                tag.setText("已增强");
+                tag.setTextSize(11);
+                tag.setTextColor(Theme.ACCENT_SUCCESS);
+                tag.setGravity(Gravity.CENTER);
+                tag.setPadding(0, Theme.dp(requireContext(), 3), 0,
+                        Theme.dp(requireContext(), 3));
+                GradientDrawable tg = new GradientDrawable();
+                tg.setColor(0xCC000000);
+                tag.setBackground(tg);
+                FrameLayout.LayoutParams tp = new FrameLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        Theme.dp(requireContext(), 22));
+                tp.gravity = Gravity.BOTTOM;
+                tag.setLayoutParams(tp);
+                cell.addView(tag);
+            }
+
             iv.setOnClickListener(x -> {
                 if (idx >= outs.size()) {
-                    toast("先点开始增强");
+                    toast("先点批量增强");
                     return;
                 }
+                Meta m = metas.get(idx);
                 CompareDialog.show(requireContext(), outs.get(idx),
-                        decodeSampled(picked.get(idx)), metas.get(idx).model,
-                        metas.get(idx).outW, metas.get(idx).outH,
-                        metas.get(idx).ms);
+                        decodeSampled(picked.get(idx)), m.model,
+                        m.outW, m.outH, m.ms);
             });
 
             grid.addView(cell);
-
-            cell.setAlpha(0f);
-            cell.setScaleX(0.85f);
-            cell.setScaleY(0.85f);
-            cell.animate().alpha(1f).scaleX(1f).scaleY(1f)
-                    .setStartDelay(i * 45L).setDuration(360)
-                    .setInterpolator(Anim.IOS_SPRING).start();
         }
-    }
-
-    private void updateCta() {
-        int n = picked.size();
-        int done = outs.size();
-        btnGo.setEnabled(n > 0 && !busy);
-        btnGo.setAlpha(n > 0 && !busy ? 1f : 0.4f);
-        if (busy) btnGo.setText("处理中…");
-        else if (done == n && n > 0) btnGo.setText("重新增强 · " + n);
-        else btnGo.setText(n > 0 ? "开始增强 · " + n : "开始增强");
-
-        btnSave.setEnabled(done > 0);
-        btnSave.setAlpha(done > 0 ? 1f : 0.4f);
     }
 
     // ================= 处理 =================
     private void start() {
         if (busy || picked.isEmpty()) return;
         busy = true;
+        saved = false;
         clearResults();
-        updateCta();
+        render();
 
         mask.setVisibility(View.VISIBLE);
         mask.setAlpha(0f);
@@ -351,24 +251,24 @@ public class SuperFragment extends Fragment {
         tvPercent.setText("0%");
         tvProgress.setText("加载模型…");
 
-        final String modelId = SREngine.MODELS[modelIdx].id;
-        final String modelName = SREngine.MODELS[modelIdx].name;
-        final int sc = scale;
+        final String modelId = SREngine.MODELS[0].id;
+        final String modelName = SREngine.MODELS[0].name;
 
         pool.execute(() -> {
             if (!engine.load(modelId, false)) {
                 ui.post(() -> {
                     hideMask();
                     toast("模型加载失败");
-                    busy = false; updateCta();
+                    busy = false; render();
                 });
                 return;
             }
             final int total = picked.size();
             for (int i = 0; i < total; i++) {
+                if (!busy) break;
                 final int idx = i;
                 ui.post(() -> {
-                    tvProgress.setText("第 " + (idx + 1) + " / " + total + " 张");
+                    tvProgress.setText("处理第 " + (idx + 1) + " / " + total + " 张");
                     ring.setProgress(0);
                     tvPercent.setText("0%");
                 });
@@ -381,10 +281,11 @@ public class SuperFragment extends Fragment {
                     ring.setProgress(p);
                     tvPercent.setText(p + "%");
                 });
-                Bitmap out = engine.process(src, sc, true, cb);
+                // 4x 超分（对齐鸿蒙版）
+                Bitmap out = engine.process(src, 4, false, cb);
 
                 if (out == null) {
-                    ui.post(() -> toast("处理失败，可能内存不足"));
+                    ui.post(() -> toast("处理失败"));
                     continue;
                 }
                 Meta m = new Meta();
@@ -395,21 +296,17 @@ public class SuperFragment extends Fragment {
                 outs.add(out);
                 metas.add(m);
 
-                ui.post(() -> {
-                    renderGrid();
-                    tvProgress.setText("第 " + (idx + 1) + " 张完成 · "
-                            + String.format("%.1fs", m.ms / 1000f));
-                });
+                ui.post(this::render);
             }
 
             ui.post(() -> {
                 hideMask();
                 busy = false;
-                updateCta();
+                render();
                 if (!outs.isEmpty()) {
                     History.add(requireContext(), picked.get(0), outs.get(0),
-                            modelName, sc, metas.get(0).ms, outs.size());
-                    toast("完成 · 点缩略图对比");
+                            modelName, 4, metas.get(0).ms, outs.size());
+                    toast("处理完成 · 点缩略图对比");
                 }
             });
         });
@@ -420,15 +317,29 @@ public class SuperFragment extends Fragment {
                 .withEndAction(() -> mask.setVisibility(View.GONE)).start();
     }
 
+    private void clearResults() {
+        outs.clear();
+        metas.clear();
+        saved = false;
+    }
+
+    private void clearAll() {
+        picked.clear();
+        clearResults();
+        render();
+    }
+
     // ================= 保存 =================
     private void saveAll() {
         if (outs.isEmpty()) return;
         int ok = 0;
         for (int i = 0; i < outs.size(); i++) {
-            Meta m = metas.get(i);
-            String name = "SuperRes_" + SREngine.MODELS[modelIdx].id
-                    + "_" + scale + "x_" + System.currentTimeMillis() + "_" + (i + 1) + ".jpg";
+            String name = "QingTu_" + System.currentTimeMillis() + "_" + (i + 1) + ".jpg";
             if (saveOne(outs.get(i), name)) ok++;
+        }
+        if (ok > 0) {
+            saved = true;
+            render();
         }
         toast("已保存 " + ok + " 张到图库");
     }
@@ -458,27 +369,19 @@ public class SuperFragment extends Fragment {
         } catch (Exception e) { return false; }
     }
 
-    // ================= 主题联动 =================
-    public void refreshThemeUi() {
-        styleChips();
-        applySegStyle();
-        int ac = Theme.accent();
-        btnGo.setBackground(Theme.primaryButton(dp(15), 0));
-        btnPick.setBackground(Theme.ghostButton(dp(15)));
-        btnSave.setBackground(Theme.ghostButton(dp(15)));
-        btnSave.setTextColor(Theme.T1);
-        btnPick.setTextColor(Theme.T1);
-        ring.setColor(ac);
-        if (emptyBox != null && emptyBox.getChildCount() >= 3) {
-            ImageView icon = (ImageView) emptyBox.getChildAt(0);
-            icon.setColorFilter(ac);
-            ((TextView) emptyBox.getChildAt(1)).setTextColor(Theme.T2);
-            ((TextView) emptyBox.getChildAt(2)).setTextColor(Theme.T3);
-        }
-        if (grid != null) {
-            View gs = getView() == null ? null : getView().findViewById(R.id.gridScroll);
-            if (gs != null) gs.setVisibility(picked.isEmpty() ? View.GONE : View.VISIBLE);
-        }
+    // ================= 帮助 =================
+    private void showHelp() {
+        String msg = "清图 · 使用说明\n\n"
+                + "1. 点击虚线框选择图片（最多 9 张）\n"
+                + "2. 点「批量增强」开始 4x 超分\n"
+                + "3. 处理完成后点缩略图可拖动对比\n"
+                + "4. 点「全部保存至图库」写入相册\n\n"
+                + "所有图像仅在本机处理，不上传。";
+        new AlertDialog.Builder(requireContext())
+                .setTitle("使用说明")
+                .setMessage(msg)
+                .setPositiveButton("知道了", null)
+                .show();
     }
 
     // ================= 工具 =================
@@ -502,10 +405,6 @@ public class SuperFragment extends Fragment {
 
     private void toast(String s) {
         if (getContext() != null) Toast.makeText(getContext(), s, Toast.LENGTH_SHORT).show();
-    }
-
-    private int dp(float v) {
-        return Math.round(v * getResources().getDisplayMetrics().density);
     }
 
     @Override
