@@ -11,14 +11,16 @@
         android:layout_height="0dp"
         android:layout_weight="1" />
 
-    <!-- 底部导航：4 Tab，图标 + 小字 -->
+    <!-- 底部 Tab -->
     <LinearLayout
         android:id="@+id/tabbar"
         android:layout_width="match_parent"
-        android:layout_height="68dp"
-        android:background="#F20C0C0E"
+        android:layout_height="70dp"
+        android:background="#E6080809"
         android:orientation="horizontal"
-        android:paddingBottom="14dp">
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp"
+        android:paddingBottom="16dp">
 
         <LinearLayout
             android:id="@+id/tab1"
@@ -41,10 +43,9 @@
                 android:id="@+id/tx1"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
+                android:layout_marginTop="3dp"
                 android:text="超分"
-                android:textColor="#F5F5FA"
-                android:textSize="11sp" />
+                android:textSize="9sp" />
         </LinearLayout>
 
         <LinearLayout
@@ -62,16 +63,15 @@
                 android:id="@+id/ic2"
                 android:layout_width="22dp"
                 android:layout_height="22dp"
-                android:src="@drawable/ic_tab_compress" />
+                android:src="@drawable/ic_tab_history" />
 
             <TextView
                 android:id="@+id/tx2"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:text="压缩"
-                android:textColor="#F5F5FA"
-                android:textSize="11sp" />
+                android:layout_marginTop="3dp"
+                android:text="历史"
+                android:textSize="9sp" />
         </LinearLayout>
 
         <LinearLayout
@@ -89,43 +89,15 @@
                 android:id="@+id/ic3"
                 android:layout_width="22dp"
                 android:layout_height="22dp"
-                android:src="@drawable/ic_tab_camera" />
+                android:src="@drawable/ic_tab_settings" />
 
             <TextView
                 android:id="@+id/tx3"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:text="相机"
-                android:textColor="#F5F5FA"
-                android:textSize="11sp" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/tab4"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:background="?android:attr/selectableItemBackgroundBorderless"
-            android:clickable="true"
-            android:focusable="true"
-            android:gravity="center"
-            android:orientation="vertical">
-
-            <ImageView
-                android:id="@+id/ic4"
-                android:layout_width="22dp"
-                android:layout_height="22dp"
-                android:src="@drawable/ic_tab_about" />
-
-            <TextView
-                android:id="@+id/tx4"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:text="关于"
-                android:textColor="#F5F5FA"
-                android:textSize="11sp" />
+                android:layout_marginTop="3dp"
+                android:text="设置"
+                android:textSize="9sp" />
         </LinearLayout>
     </LinearLayout>
 </LinearLayout>

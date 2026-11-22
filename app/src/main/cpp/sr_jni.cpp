@@ -241,9 +241,9 @@ Java_com_skl_superres_SREngine_nativeProcess(JNIEnv* env, jclass,
                             if (sxSrc >= w) sxSrc = w - 1;
                             if (sySrc >= h) sySrc = h - 1;
                             jint sc = src[(size_t)sySrc * w + sxSrc];
-                            // 网络输出的亮度（三通道近似相等，取均值更稳）
+                            // 亮度取三通道均值，更稳定
                             float Y = (r0[x] + r1[x] + r2[x]) * (1.0f / 3.0f) * 255.0f;
-                            // 正确计算源图色度差（BT.601 正向变换）
+                            // BT.601 正向变换求色度差（禁止用单通道代替）
                             float sr = (float)((sc >> 16) & 0xFF);
                             float sg = (float)((sc >> 8) & 0xFF);
                             float sb = (float)(sc & 0xFF);

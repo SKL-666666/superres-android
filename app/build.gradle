@@ -10,8 +10,8 @@ android {
         applicationId "com.skl.superres"
         minSdk 26
         targetSdk 34
-        versionCode 1
-        versionName "1.0"
+        versionCode 20
+        versionName "2.0"
         ndk {
             abiFilters 'arm64-v8a'
         }
@@ -49,8 +49,7 @@ android {
         jniLibs { useLegacyPackaging = false }
     }
 
-    // 强制源码按 UTF-8 编译，避免中文注释/字符串乱码
-    tasks.withType(JavaCompile).configureEach {
+    // 寮哄埗婧愮爜鎸?UTF-8 缂栬瘧锛岄伩鍏嶄腑鏂囨敞閲?瀛楃涓蹭贡鐮?    tasks.withType(JavaCompile).configureEach {
         options.encoding = 'UTF-8'
     }
 }
