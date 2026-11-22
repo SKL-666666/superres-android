@@ -11,7 +11,7 @@
             <corners android:radius="18dp" />
         </shape>
     </item>
-    <item android:top="1dp" android:bottom="55%">
+    <item android:top="1dp" android:bottom="28dp">
         <shape>
             <gradient
                 android:angle="270"
