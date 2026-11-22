@@ -8,3 +8,8 @@ captures/
 .externalNativeBuild/
 .cxx/
 app/src/main/cpp/ncnn-android/
+
+# 本地 ncnn 源码与量化工具链（261MB，CI 不依赖）
+build-tools/
+
+*.apk

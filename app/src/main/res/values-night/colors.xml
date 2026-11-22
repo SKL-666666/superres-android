@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 深色主题（夜间自动启用） -->
+    <color name="page">#0B0B0F</color>
+    <color name="card">#16161E</color>
+    <color name="text_primary">#FFFFFF</color>
+    <color name="text_secondary">#9A9AA8</color>
+    <color name="text_muted">#7A7A88</color>
+    <color name="text_faint">#6E6E7C</color>
+    <color name="accent">#8B7CFF</color>
+    <color name="accent_soft">#B9AEFF</color>
+    <color name="track">#2A2A38</color>
+    <color name="btn_ghost_text">#C9C9D8</color>
+    <color name="seg_text_on">#FFFFFF</color>
+    <color name="seg_text_off">#8A8A98</color>
+    <color name="tab_bg">#12121A</color>
+    <color name="tab_icon_off">#6A6A78</color>
+</resources>

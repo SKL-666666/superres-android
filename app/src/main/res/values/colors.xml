@@ -1,4 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="ic_launcher_background">#7B6BFF</color>
+
+    <!-- 浅色主题（默认，随系统切换） -->
+    <color name="page">#F6F6FA</color>
+    <color name="card">#FFFFFF</color>
+    <color name="text_primary">#14141A</color>
+    <color name="text_secondary">#5A5A68</color>
+    <color name="text_muted">#77778A</color>
+    <color name="text_faint">#8A8A9A</color>
+    <color name="accent">#6C5CE7</color>
+    <color name="accent_soft">#8B7CFF</color>
+    <color name="track">#E4E4EC</color>
+    <color name="btn_ghost_text">#3A3A48</color>
+    <color name="seg_text_on">#FFFFFF</color>
+    <color name="seg_text_off">#7A7A8A</color>
+    <color name="tab_bg">#FFFFFF</color>
+    <color name="tab_icon_off">#9A9AA8</color>
 </resources>
