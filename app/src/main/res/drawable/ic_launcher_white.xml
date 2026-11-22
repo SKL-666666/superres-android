@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 清图 · 应用图标：白底 + 深色「清」字意象 + 精简线条 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
@@ -9,39 +8,46 @@
     <!-- 白色圆角底 -->
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M26,0 L82,0 A26,26 0 0 1 108,26 L108,82 A26,26 0 0 1 82,108
-                         L26,108 A26,26 0 0 1 0,82 L0,26 A26,26 0 0 1 26,0 Z" />
+        android:pathData="M26,0 L82,0 A26,26 0 0 1 108,26 L108,82 A26,26 0 0 1 82,108 L26,108 A26,26 0 0 1 0,82 L0,26 A26,26 0 0 1 26,0 Z" />
 
-    <!-- 主图形：「清」的简化 —— 三点水 + 青 -->
     <!-- 三点水 -->
     <path
         android:fillColor="#1C1C1E"
         android:pathData="M22,40 m-4,0 a4,4 0 1,0 8,0 a4,4 0 1,0 -8,0" />
     <path
         android:fillColor="#1C1C1E"
-        android:pathData="M20,56 m-4,0 a4,4 0 1,0 8,0 a4,4 0 1,0 -8,0" />
+        android:pathData="M20,57 m-4,0 a4,4 0 1,0 8,0 a4,4 0 1,0 -8,0" />
     <path
-        android:fillColor="#1C1C1E"
-        android:pathData="M24,72 L30,84"
+        android:pathData="M24,73 L30,85"
         android:strokeColor="#1C1C1E"
         android:strokeWidth="7"
         android:strokeLineCap="round" />
 
-    <!-- 青：上半部三横 + 竖 -->
+    <!-- 青：三横 -->
     <path
-        android:pathData="M42,32 L84,32 M42,46 L84,46 M42,60 L84,60"
+        android:pathData="M42,32 L84,32"
+        android:strokeColor="#1C1C1E"
+        android:strokeWidth="7"
+        android:strokeLineCap="round" />
+    <path
+        android:pathData="M42,46 L84,46"
+        android:strokeColor="#1C1C1E"
+        android:strokeWidth="7"
+        android:strokeLineCap="round" />
+    <path
+        android:pathData="M42,60 L84,60"
         android:strokeColor="#1C1C1E"
         android:strokeWidth="7"
         android:strokeLineCap="round" />
 
-    <!-- 青：竖线 -->
+    <!-- 青：竖 -->
     <path
         android:pathData="M63,22 L63,60"
         android:strokeColor="#1C1C1E"
         android:strokeWidth="7"
         android:strokeLineCap="round" />
 
-    <!-- 青：下半部「月」 -->
+    <!-- 月字框 -->
     <path
         android:pathData="M48,68 L48,88 A2,2 0 0 0 50,90 L76,90 A2,2 0 0 0 78,88 L78,68 Z"
         android:strokeColor="#1C1C1E"
@@ -51,12 +57,17 @@
 
     <!-- 月内两横 -->
     <path
-        android:pathData="M55,78 L71,78 M55,84 L71,84"
+        android:pathData="M55,78 L71,78"
+        android:strokeColor="#1C1C1E"
+        android:strokeWidth="5"
+        android:strokeLineCap="round" />
+    <path
+        android:pathData="M55,84 L71,84"
         android:strokeColor="#1C1C1E"
         android:strokeWidth="5"
         android:strokeLineCap="round" />
 
-    <!-- 强调色点缀：右上角 */
+    <!-- 强调色点缀 -->
     <path
         android:fillColor="#4A56D4"
         android:pathData="M90,16 m-6,0 a6,6 0 1,0 12,0 a6,6 0 1,0 -12,0" />
